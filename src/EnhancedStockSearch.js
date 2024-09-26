@@ -84,7 +84,6 @@ function EnhancedStockSearch() {
 
   const {
     processQuery,
-    loading: aiLoading,
     error: aiError,
   } = AIQueryProcessor({
     onQueryProcessed: ({

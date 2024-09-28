@@ -15,4 +15,23 @@ code {
     monospace;
 }
 
+.graph-container {
+  height: 50vh;
+  min-height: 300px;
+}
+
+@media (max-width: 768px) {
+  .graph-container {
+    height: 40vh;
+    min-height: 250px;
+  }
+}
+
+@media (max-width: 480px) {
+  .graph-container {
+    height: 30vh;
+    min-height: 200px;
+  }
+}
+
 

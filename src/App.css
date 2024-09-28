@@ -36,3 +36,15 @@
     transform: rotate(360deg);
   }
 }
+
+@media (min-width: 640px) {
+  .recharts-text {
+    font-size: 0.7rem !important;
+  }
+}
+
+@media (max-width: 639px) {
+  .recharts-text {
+    font-size: 0.5rem !important;
+  }
+}

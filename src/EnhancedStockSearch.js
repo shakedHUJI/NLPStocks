@@ -11,6 +11,9 @@ import {
   ResponsiveContainer,
   ReferenceLine,
   Tooltip as RechartsTooltip,
+  ReferenceArea,
+  ReferenceDot,
+  Legend,
 } from "recharts";
 import { Search, Moon, Sun, TrendingUp, Calendar } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
@@ -18,7 +21,13 @@ import AIQueryProcessor from "./AIQueryProcessor";
 import axios from "axios";
 import { useTheme } from "next-themes";
 import { X } from "lucide-react"; // Add this import
-import { format, parseISO } from "date-fns"; // Add this import
+import {
+  format,
+  parseISO,
+  startOfWeek,
+  endOfWeek,
+  isWithinInterval,
+} from "date-fns"; // Add this import
 
 // Import UI components
 import { Button } from "./button.tsx";
@@ -31,7 +40,21 @@ import {
   TooltipProvider,
 } from "./tooltip.tsx";
 
-import './EnhancedStockSearch.css'; // Add this import at the top of the file
+import "./EnhancedStockSearch.css"; // Add this import at the top of the file
+
+// Add this array of colors at the top of the file, outside the component
+const lineColors = [
+  "#3b82f6", // Blue
+  "#10b981", // Green
+  "#f59e0b", // Yellow
+  "#ef4444", // Red
+  "#8b5cf6", // Purple
+  "#ec4899", // Pink
+  "#14b8a6", // Teal
+  "#f97316", // Orange
+  "#6366f1", // Indigo
+  "#84cc16", // Lime
+];
 
 // Add this new component for the loading animation
 const LoadingDots = () => {
@@ -44,24 +67,28 @@ const LoadingDots = () => {
   );
 };
 
-// Add this new component for the custom tooltip
-const CustomTooltip = ({ active, payload, label }) => {
+// Update the CustomTooltip component
+const CustomTooltip = ({ active, payload, label, keyDates, colors }) => {
   if (active && payload && payload.length) {
+    const keyDateInfo = keyDates.find((keyDate) => keyDate.date === label);
+
     return (
       <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow-lg">
         <p className="text-sm font-semibold text-gray-600 dark:text-gray-300">{`Date: ${label}`}</p>
         {payload.map((entry, index) => (
           <p
             key={index}
-            className={`text-sm ${
-              index === 0
-                ? "text-blue-600 dark:text-blue-400"
-                : "text-green-600 dark:text-green-400"
-            }`}
+            className="text-sm"
+            style={{ color: colors[entry.name] }}
           >
             {`${entry.name}: $${entry.value.toFixed(2)}`}
           </p>
         ))}
+        {keyDateInfo && (
+          <p className="text-sm mt-2 text-red-600 dark:text-red-400">
+            {`${keyDateInfo.symbol}: ${keyDateInfo.description}`}
+          </p>
+        )}
       </div>
     );
   }
@@ -82,6 +109,9 @@ export default function EnhancedStockSearch() {
   const [fullDateRange, setFullDateRange] = useState({ min: "", max: "" });
   const [stockSymbols, setStockSymbols] = useState([]);
   const [compareMode, setCompareMode] = useState(false);
+
+  // Add this new state to store color mappings
+  const [colorMap, setColorMap] = useState({});
 
   const { processQuery, error: aiError } = AIQueryProcessor({
     onQueryProcessed: ({
@@ -174,6 +204,13 @@ export default function EnhancedStockSearch() {
           endDate: mergedData[mergedData.length - 1].date,
         });
       }
+
+      // Set the color map
+      const newColorMap = symbols.reduce((acc, symbol, index) => {
+        acc[symbol] = lineColors[index % lineColors.length];
+        return acc;
+      }, {});
+      setColorMap(newColorMap);
     } catch (err) {
       setError("Failed to fetch stock data. Please try again.");
       console.error("Error fetching stock data:", err);
@@ -345,11 +382,11 @@ export default function EnhancedStockSearch() {
                         <Calendar className="mr-2 h-4 w-4" /> Apply Range
                       </Button>
                     </div>
-                    <div className="w-full h-[400px]">
+                    <div className="w-full h-[400px] select-none">
                       <ResponsiveContainer width="100%" height="100%">
                         <AreaChart
                           data={stockData}
-                          margin={{ top: 70, right: 50, left: 0, bottom: 0 }}
+                          margin={{ top: 20, right: 50, left: 0, bottom: 50 }} // Increased bottom margin
                         >
                           <defs>
                             {stockSymbols.map((symbol, index) => (
@@ -363,16 +400,12 @@ export default function EnhancedStockSearch() {
                               >
                                 <stop
                                   offset="5%"
-                                  stopColor={
-                                    index === 0 ? "#3b82f6" : "#10b981"
-                                  }
+                                  stopColor={colorMap[symbol]}
                                   stopOpacity={0.8}
                                 />
                                 <stop
                                   offset="95%"
-                                  stopColor={
-                                    index === 0 ? "#3b82f6" : "#10b981"
-                                  }
+                                  stopColor={colorMap[symbol]}
                                   stopOpacity={0}
                                 />
                               </linearGradient>
@@ -392,38 +425,48 @@ export default function EnhancedStockSearch() {
                             style={{ fontSize: "0.7rem" }}
                             width={60}
                           />
-                          <RechartsTooltip content={<CustomTooltip />} />
-                          {stockSymbols.map((symbol, index) => (
+                          <RechartsTooltip
+                            content={<CustomTooltip keyDates={keyDates} colors={colorMap} />}
+                          />
+                          <Legend
+                            verticalAlign="bottom"
+                            height={36}
+                            iconType="circle"
+                            iconSize={8} // Reduced icon size
+                            wrapperStyle={{
+                              paddingTop: '20px', // Add space above the legend
+                              fontSize: '0.8rem', // Make legend text smaller
+                            }}
+                            formatter={(value, entry) => (
+                              <span style={{ color: colorMap[value] }}>{value}</span>
+                            )}
+                          />
+                          {stockSymbols.map((symbol) => (
                             <Area
                               key={symbol}
                               type="monotone"
                               dataKey={symbol}
-                              stroke={index === 0 ? "#3b82f6" : "#10b981"}
+                              stroke={colorMap[symbol]}
                               fillOpacity={1}
                               fill={`url(#color${symbol})`}
                             />
                           ))}
-                          {keyDates.map((keyDate, index) => (
-                            <ReferenceLine
-                              key={index}
-                              x={keyDate.date}
-                              stroke={
-                                keyDate.symbol === stockSymbols[0]
-                                  ? "#FF4500"
-                                  : "#9333ea"
-                              }
-                              strokeDasharray="3 3"
-                              label={{
-                                value: `${keyDate.symbol}: ${keyDate.description}`,
-                                position: "top",
-                                fill: theme === "dark" ? "#fff" : "#333",
-                                fontSize: 10,
-                                angle: -20,
-                                offset: 20,
-                                textAnchor: "middle",
-                              }}
-                            />
-                          ))}
+                          {keyDates.map((keyDate, index) => {
+                            const dataPoint = stockData.find(
+                              (item) => item.date === keyDate.date
+                            );
+                            return dataPoint ? (
+                              <ReferenceDot
+                                key={index}
+                                x={keyDate.date}
+                                y={dataPoint[keyDate.symbol]}
+                                r={4}
+                                fill="red"
+                                fillOpacity={0.5} // Make the red dots a bit more transparent
+                                stroke="none"
+                              />
+                            ) : null;
+                          })}
                         </AreaChart>
                       </ResponsiveContainer>
                     </div>

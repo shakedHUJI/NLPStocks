@@ -27,6 +27,10 @@ import {
   startOfWeek,
   endOfWeek,
   isWithinInterval,
+  addDays,
+  subDays,
+  isAfter,
+  isBefore,
 } from "date-fns"; // Add this import
 
 // Import UI components
@@ -70,11 +74,26 @@ const LoadingDots = () => {
 // Update the CustomTooltip component
 const CustomTooltip = ({ active, payload, label, keyDates, colors }) => {
   if (active && payload && payload.length) {
-    const keyDateInfo = keyDates.find((keyDate) => keyDate.date === label);
+    const currentDate = parseISO(label);
+    const relevantKeyDates = keyDates.filter((keyDate) => {
+      const keyDateParsed = parseISO(keyDate.date);
+      return isWithinInterval(currentDate, {
+        start: subDays(keyDateParsed, 3),
+        end: addDays(keyDateParsed, 3),
+      });
+    });
 
     return (
       <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow-lg">
         <p className="text-sm font-semibold text-gray-600 dark:text-gray-300">{`Date: ${label}`}</p>
+        {relevantKeyDates.map((keyDate, index) => (
+          <p
+            key={index}
+            className="text-sm mt-2 text-red-600 dark:text-red-400 font-bold"
+          >
+            {`${keyDate.symbol} (${keyDate.date}): ${keyDate.description}`}
+          </p>
+        ))}
         {payload.map((entry, index) => (
           <p
             key={index}
@@ -84,11 +103,6 @@ const CustomTooltip = ({ active, payload, label, keyDates, colors }) => {
             {`${entry.name}: $${entry.value.toFixed(2)}`}
           </p>
         ))}
-        {keyDateInfo && (
-          <p className="text-sm mt-2 text-red-600 dark:text-red-400">
-            {`${keyDateInfo.symbol}: ${keyDateInfo.description}`}
-          </p>
-        )}
       </div>
     );
   }
@@ -112,6 +126,16 @@ export default function EnhancedStockSearch() {
 
   // Add this new state to store color mappings
   const [colorMap, setColorMap] = useState({});
+
+  const [zoomState, setZoomState] = useState({
+    refAreaLeft: '',
+    refAreaRight: '',
+    left: 'dataMin',
+    right: 'dataMax',
+    animation: true,
+  });
+
+  const [originalStockData, setOriginalStockData] = useState([]);
 
   const { processQuery, error: aiError } = AIQueryProcessor({
     onQueryProcessed: ({
@@ -190,6 +214,7 @@ export default function EnhancedStockSearch() {
       }, []);
 
       setStockData(mergedData);
+      setOriginalStockData(mergedData); // Store the original data
       setShowGraph(true);
       setLoadingState("");
 
@@ -252,20 +277,63 @@ export default function EnhancedStockSearch() {
     }
   };
 
+  const handleZoom = () => {
+    let { refAreaLeft, refAreaRight } = zoomState;
+
+    if (refAreaLeft === refAreaRight || refAreaRight === '') {
+      setZoomState((prev) => ({
+        ...prev,
+        refAreaLeft: '',
+        refAreaRight: '',
+      }));
+      return;
+    }
+
+    // Ensure refAreaLeft is before refAreaRight
+    if (isAfter(parseISO(refAreaLeft), parseISO(refAreaRight))) {
+      [refAreaLeft, refAreaRight] = [refAreaRight, refAreaLeft];
+    }
+
+    // Filter data to the selected range
+    const filteredData = originalStockData.filter(
+      (d) => !isBefore(parseISO(d.date), parseISO(refAreaLeft)) && !isAfter(parseISO(d.date), parseISO(refAreaRight))
+    );
+
+    setStockData(filteredData);
+    setZoomState((prev) => ({
+      ...prev,
+      refAreaLeft: '',
+      refAreaRight: '',
+      left: refAreaLeft,
+      right: refAreaRight,
+    }));
+  };
+
+  const handleZoomOut = () => {
+    setStockData(originalStockData);
+    setZoomState({
+      refAreaLeft: '',
+      refAreaRight: '',
+      left: 'dataMin',
+      right: 'dataMax',
+      animation: true,
+    });
+  };
+
   return (
     <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
-      <div className="min-h-screen p-8 transition-colors duration-200 bg-gradient-to-br from-blue-50 via-indigo-100 to-purple-100 dark:from-gray-900 dark:via-blue-900 dark:to-purple-900">
+      <div className="min-h-screen p-4 sm:p-8 transition-colors duration-200 bg-gradient-to-br from-blue-50 via-indigo-100 to-purple-100 dark:from-gray-900 dark:via-blue-900 dark:to-purple-900 overflow-x-hidden">
         <motion.div
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
-          className="max-w-4xl mx-auto"
+          className="max-w-full sm:max-w-4xl mx-auto"
         >
-          <div className="flex justify-between items-center mb-8">
+          <div className="flex flex-col sm:flex-row justify-between items-center mb-8">
             <motion.h1
               initial={{ x: -20 }}
               animate={{ x: 0 }}
-              className="text-4xl font-bold text-gray-800 dark:text-gray-100"
+              className="text-3xl sm:text-4xl font-bold text-gray-800 dark:text-gray-100 mb-4 sm:mb-0"
             >
               NLP Stock Insights
             </motion.h1>
@@ -290,14 +358,14 @@ export default function EnhancedStockSearch() {
             </TooltipProvider>
           </div>
           <form onSubmit={handleSubmit} className="mb-8">
-            <div className="flex gap-4">
+            <div className="flex flex-col sm:flex-row gap-4">
               <div className="relative flex-grow">
                 <Input
                   type="text"
                   placeholder="Ask about stock performance..."
                   value={query}
                   onChange={(e) => setQuery(e.target.value)}
-                  className="pr-8" // Add padding to the right for the clear button
+                  className="pr-8 bg-white bg-opacity-90 dark:bg-gray-800 dark:bg-opacity-50 backdrop-blur-sm w-full"
                 />
                 {query && (
                   <button
@@ -309,7 +377,11 @@ export default function EnhancedStockSearch() {
                   </button>
                 )}
               </div>
-              <Button type="submit" disabled={loading}>
+              <Button
+                type="submit"
+                disabled={loading}
+                className="w-full sm:w-auto"
+              >
                 <Search className="mr-2 h-4 w-4" /> Search
               </Button>
             </div>
@@ -345,8 +417,9 @@ export default function EnhancedStockSearch() {
                 animate={{ opacity: 1, scale: 1 }}
                 exit={{ opacity: 0, scale: 0.95 }}
                 transition={{ duration: 0.5 }}
+                className="w-full" // Changed from "overflow-x-auto" to "w-full"
               >
-                <Card>
+                <Card className="min-w-[300px] w-full">
                   <CardHeader>
                     <CardTitle className="flex items-center">
                       <TrendingUp className="mr-2 h-6 w-6 text-blue-500" />
@@ -359,7 +432,7 @@ export default function EnhancedStockSearch() {
                     </p>
                   </CardHeader>
                   <CardContent>
-                    <div className="flex items-center space-x-4 mb-4">
+                    <div className="flex flex-wrap items-center gap-4 mb-4">
                       <Input
                         type="date"
                         name="startDate"
@@ -367,7 +440,7 @@ export default function EnhancedStockSearch() {
                         onChange={handleDateRangeChange}
                         min={fullDateRange.min}
                         max={fullDateRange.max}
-                        className="w-40"
+                        className="w-full sm:w-40 bg-white bg-opacity-90 dark:bg-gray-800 dark:bg-opacity-50 backdrop-blur-sm"
                       />
                       <Input
                         type="date"
@@ -376,17 +449,26 @@ export default function EnhancedStockSearch() {
                         onChange={handleDateRangeChange}
                         min={fullDateRange.min}
                         max={fullDateRange.max}
-                        className="w-40"
+                        className="w-full sm:w-40 bg-white bg-opacity-90 dark:bg-gray-800 dark:bg-opacity-50 backdrop-blur-sm"
                       />
-                      <Button onClick={applyDateRange}>
+                      <Button
+                        onClick={applyDateRange}
+                        className="w-full sm:w-auto"
+                      >
                         <Calendar className="mr-2 h-4 w-4" /> Apply Range
+                      </Button>
+                      <Button onClick={handleZoomOut} className="w-full sm:w-auto">
+                        <Search className="mr-2 h-4 w-4" /> Zoom Out
                       </Button>
                     </div>
                     <div className="w-full h-[400px] select-none">
                       <ResponsiveContainer width="100%" height="100%">
                         <AreaChart
                           data={stockData}
-                          margin={{ top: 20, right: 50, left: 0, bottom: 50 }} // Increased bottom margin
+                          margin={{ top: 20, right: 20, left: 0, bottom: 60 }}
+                          onMouseDown={(e) => setZoomState((prev) => ({ ...prev, refAreaLeft: e.activeLabel }))}
+                          onMouseMove={(e) => zoomState.refAreaLeft && setZoomState((prev) => ({ ...prev, refAreaRight: e.activeLabel }))}
+                          onMouseUp={handleZoom}
                         >
                           <defs>
                             {stockSymbols.map((symbol, index) => (
@@ -415,18 +497,26 @@ export default function EnhancedStockSearch() {
                           <XAxis
                             dataKey="date"
                             stroke={theme === "dark" ? "#fff" : "#888"}
-                            style={{ fontSize: "0.7rem" }}
+                            style={{ fontSize: "0.6rem" }}
                             tick={{ angle: -45, textAnchor: "end", dy: 10 }}
                             height={60}
                             interval="preserveStartEnd"
+                            allowDataOverflow
+                            domain={['dataMin', 'dataMax']}
                           />
                           <YAxis
                             stroke={theme === "dark" ? "#fff" : "#888"}
-                            style={{ fontSize: "0.7rem" }}
-                            width={60}
+                            style={{ fontSize: "0.6rem" }}
+                            width={40}
+                            allowDataOverflow
                           />
                           <RechartsTooltip
-                            content={<CustomTooltip keyDates={keyDates} colors={colorMap} />}
+                            content={
+                              <CustomTooltip
+                                keyDates={keyDates}
+                                colors={colorMap}
+                              />
+                            }
                           />
                           <Legend
                             verticalAlign="bottom"
@@ -434,11 +524,13 @@ export default function EnhancedStockSearch() {
                             iconType="circle"
                             iconSize={8} // Reduced icon size
                             wrapperStyle={{
-                              paddingTop: '20px', // Add space above the legend
-                              fontSize: '0.8rem', // Make legend text smaller
+                              paddingTop: "20px", // Add space above the legend
+                              fontSize: "0.8rem", // Make legend text smaller
                             }}
                             formatter={(value, entry) => (
-                              <span style={{ color: colorMap[value] }}>{value}</span>
+                              <span style={{ color: colorMap[value] }}>
+                                {value}
+                              </span>
                             )}
                           />
                           {stockSymbols.map((symbol) => (
@@ -467,6 +559,15 @@ export default function EnhancedStockSearch() {
                               />
                             ) : null;
                           })}
+                          {zoomState.refAreaLeft && zoomState.refAreaRight ? (
+                            <ReferenceArea
+                              x1={zoomState.refAreaLeft}
+                              x2={zoomState.refAreaRight}
+                              strokeOpacity={0.3}
+                              fill="#8884d8"
+                              fillOpacity={0.3}
+                            />
+                          ) : null}
                         </AreaChart>
                       </ResponsiveContainer>
                     </div>

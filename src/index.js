@@ -6,12 +6,14 @@ import { ThemeProvider } from 'next-themes';
 import reportWebVitals from './reportWebVitals';
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
+const app = (
+  <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
+    <App />
+  </ThemeProvider>
+);
+
 root.render(
-  <React.StrictMode>
-    <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
-      <App />
-    </ThemeProvider>
-  </React.StrictMode>
+  process.env.NODE_ENV === 'development' ? <React.StrictMode>{app}</React.StrictMode> : app
 );
 
 // If you want to start measuring performance in your app, pass a function

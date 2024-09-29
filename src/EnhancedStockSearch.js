@@ -13,24 +13,13 @@ import {
   ReferenceArea,
   ReferenceDot,
   Legend,
-  BarChart,
-  Bar,
-  Cell,
 } from "recharts";
 import { Search, Moon, Sun, TrendingUp, X } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import AIQueryProcessor from "./AIQueryProcessor";
 import axios from "axios";
 import { useTheme } from "next-themes";
-import {
-  parseISO,
-  isWithinInterval,
-  addDays,
-  subDays,
-  isAfter,
-  isBefore,
-  format,
-} from "date-fns";
+import { parseISO, isAfter, isBefore } from "date-fns";
 
 import { Button } from "./button.tsx";
 import { Input } from "./input.tsx";
@@ -43,6 +32,13 @@ import {
 } from "./tooltip.tsx";
 
 import "./EnhancedStockSearch.css";
+import LoadingDots from "./components/LoadingDots";
+import CustomTooltip from "./components/CustomTooltip";
+import {
+  formatLargeNumber,
+  formatPercentage,
+  formatNumber,
+} from "./utils/formatters";
 
 const API_URL = process.env.REACT_APP_API_URL || "http://localhost:5000";
 console.log("API_URL:", API_URL);
@@ -59,69 +55,6 @@ const lineColors = [
   "#6366f1",
   "#84cc16",
 ];
-
-const LoadingDots = () => {
-  return (
-    <span className="loading-dots">
-      <span className="dot">.</span>
-      <span className="dot">.</span>
-      <span className="dot">.</span>
-    </span>
-  );
-};
-
-const CustomTooltip = ({ active, payload, label, keyDates, colors }) => {
-  if (active && payload && payload.length) {
-    const currentDate = parseISO(label);
-    const relevantKeyDates = keyDates.filter((keyDate) => {
-      const keyDateParsed = parseISO(keyDate.date);
-      return isWithinInterval(currentDate, {
-        start: subDays(keyDateParsed, 3),
-        end: addDays(keyDateParsed, 3),
-      });
-    });
-
-    return (
-      <div className="bg-white bg-opacity-85 dark:bg-gray-800 dark:bg-opacity-75 p-4 rounded-lg shadow-lg">
-        <p className="text-sm font-semibold text-gray-600 dark:text-gray-300">{`Date: ${label}`}</p>
-        {relevantKeyDates.map((keyDate, index) => (
-          <p
-            key={index}
-            className="text-sm mt-2 text-red-600 dark:text-red-400 font-bold"
-          >
-            {`${keyDate.symbol} (${keyDate.date}): ${keyDate.description}`}
-          </p>
-        ))}
-        {payload.map((entry, index) => (
-          <p
-            key={index}
-            className="text-sm"
-            style={{ color: colors[entry.name] }}
-          >
-            {`${entry.name}: $${entry.value.toFixed(2)}`}
-          </p>
-        ))}
-      </div>
-    );
-  }
-  return null;
-};
-
-const CustomBarTooltip = ({ active, payload, label }) => {
-  if (active && payload && payload.length) {
-    return (
-      <div className="bg-white dark:bg-gray-800 p-4 border border-gray-300 dark:border-gray-600 rounded shadow-lg">
-        <p className="font-bold text-lg mb-2">{`Year: ${label}`}</p>
-        {payload.map((entry, index) => (
-          <p key={index} className="text-sm" style={{ color: entry.color }}>
-            {`${entry.name}: $${entry.value.toLocaleString()}`}
-          </p>
-        ))}
-      </div>
-    );
-  }
-  return null;
-};
 
 export default function EnhancedStockSearch() {
   const [query, setQuery] = useState("");
@@ -144,7 +77,6 @@ export default function EnhancedStockSearch() {
   });
   const [originalStockData, setOriginalStockData] = useState([]);
   const [metrics, setMetrics] = useState({});
-  const [earningsData, setEarningsData] = useState(null);
 
   const { theme, setTheme } = useTheme();
 
@@ -321,32 +253,6 @@ export default function EnhancedStockSearch() {
     handleZoomOut();
   };
 
-  // Helper functions for formatting
-  const formatLargeNumber = (num) => {
-    if (num >= 1e12) return (num / 1e12).toFixed(2) + "T";
-    if (num >= 1e9) return (num / 1e9).toFixed(2) + "B";
-    if (num >= 1e6) return (num / 1e6).toFixed(2) + "M";
-    return num.toFixed(2);
-  };
-
-  const formatPercentage = (num) => (num * 100).toFixed(2) + "%";
-
-  const formatNumber = (num) => num.toFixed(2);
-
-  const fetchEarningsData = async (symbols) => {
-    try {
-      const response = await axios.get(`${API_URL}/api/stock_earnings`, {
-        params: { symbols: symbols.join(',') },
-      });
-      setEarningsData(response.data);
-      setLoadingState("");
-    } catch (err) {
-      console.error("Error fetching earnings data:", err);
-      setError("Failed to fetch earnings data. Please try again.");
-      setLoadingState("");
-    }
-  };
-
   const { processQuery, error: aiError } = AIQueryProcessor({
     onQueryProcessed: (result) => {
       console.log("AI Query result:", result);
@@ -359,9 +265,6 @@ export default function EnhancedStockSearch() {
       );
       const metricsAction = result.actions.find(
         (action) => action.type === "getMetrics"
-      );
-      const earningsAction = result.actions.find(
-        (action) => action.type === "getEarnings"
       );
 
       if (compareAction) {
@@ -379,35 +282,8 @@ export default function EnhancedStockSearch() {
           fetchMetrics(symbol, metricsAction.metrics);
         });
       }
-
-      if (earningsAction) {
-        fetchEarningsData(earningsAction.symbols);
-      }
     },
   });
-
-  const prepareEarningsData = (earningsData) => {
-    const years = new Set();
-    const stockSymbols = Object.keys(earningsData);
-
-    // Collect all years
-    stockSymbols.forEach(symbol => {
-      earningsData[symbol].historical_earnings.forEach(item => {
-        years.add(item.Year);
-      });
-    });
-
-    // Create combined data
-    return Array.from(years).sort().map(year => {
-      const dataPoint = { Year: year };
-      stockSymbols.forEach(symbol => {
-        const earningsForYear = earningsData[symbol].historical_earnings.find(item => item.Year === year);
-        dataPoint[`${symbol} Earnings`] = earningsForYear ? earningsForYear.Earnings : 0;
-        dataPoint[`${symbol} Revenue`] = earningsForYear ? earningsForYear.Revenue : 0;
-      });
-      return dataPoint;
-    });
-  };
 
   return (
     <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
@@ -726,84 +602,6 @@ export default function EnhancedStockSearch() {
                             </motion.div>
                           )
                         )}
-                      </div>
-                    </CardContent>
-                  </Card>
-                </motion.div>
-              )}
-
-              {earningsData && (
-                <motion.div
-                  key="earnings"
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: 20 }}
-                  transition={{ duration: 0.5 }}
-                  className="w-full mt-8"
-                >
-                  <Card className="min-w-[300px] w-full relative">
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="absolute top-2 right-2"
-                      onClick={() => setEarningsData(null)}
-                    >
-                      <X className="h-4 w-4" />
-                    </Button>
-                    <CardHeader>
-                      <CardTitle className="flex items-center">
-                        <TrendingUp className="mr-2 h-6 w-6 text-blue-500" />
-                        Earnings Data Comparison
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="space-y-6">
-                              <div>
-                                <h4 className="text-lg font-semibold mb-2">Historical Earnings</h4>
-                          <ResponsiveContainer width="100%" height={400}>
-                            <BarChart data={prepareEarningsData(earningsData)}>
-                                    <CartesianGrid strokeDasharray="3 3" />
-                                    <XAxis dataKey="Year" />
-                                    <YAxis yAxisId="left" orientation="left" stroke="#8884d8" />
-                                    <YAxis yAxisId="right" orientation="right" stroke="#82ca9d" />
-                                    <Tooltip content={<CustomBarTooltip />} />
-                                    <Legend />
-                              {Object.keys(earningsData).flatMap((symbol, index) => [
-                                <Bar 
-                                  key={`${symbol}-earnings`} 
-                                  yAxisId="left" 
-                                  dataKey={`${symbol} Earnings`} 
-                                  fill={lineColors[index * 2]} 
-                                  name={`${symbol} Earnings`} 
-                                />,
-                                <Bar 
-                                  key={`${symbol}-revenue`} 
-                                  yAxisId="right" 
-                                  dataKey={`${symbol} Revenue`} 
-                                  fill={lineColors[index * 2 + 1]} 
-                                  name={`${symbol} Revenue`} 
-                                />
-                              ])}
-                                  </BarChart>
-                                </ResponsiveContainer>
-                              </div>
-                        {Object.entries(earningsData).map(([symbol, data]) => (
-                          <div key={symbol} className="mt-4">
-                            <h4 className="text-lg font-semibold mb-2">{symbol} Upcoming Earnings</h4>
-                            {data.upcoming_earnings && data.upcoming_earnings.length > 0 ? (
-                                <ul className="space-y-2">
-                                  {data.upcoming_earnings.map((item, index) => (
-                                    <li key={index} className="bg-white bg-opacity-50 dark:bg-gray-800 dark:bg-opacity-40 p-2 rounded-md">
-                                      <span className="font-semibold">{format(new Date(item.Date), 'MMM d, yyyy')}:</span> 
-                                      EPS Estimate: {item.EPS_Estimate.toFixed(2)}
-                                    </li>
-                                  ))}
-                                </ul>
-                            ) : (
-                              <p>No upcoming earnings data available for {symbol}.</p>
-                            )}
-                          </div>
-                        ))}
                       </div>
                     </CardContent>
                   </Card>

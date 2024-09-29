@@ -4,11 +4,21 @@ from flask_cors import CORS
 import pandas as pd
 import logging
 from datetime import datetime
+import os
+from openai import OpenAI
+import json
+from dotenv import load_dotenv
+
+# Load environment variables from .env file
+load_dotenv()
 
 app = Flask(__name__)
 CORS(app)
 
 logging.basicConfig(level=logging.DEBUG)
+
+# Initialize the OpenAI client with the API key from .env
+client = OpenAI(api_key=os.getenv("REACT_APP_OPENAI_API_KEY"))
 
 @app.route('/api/stock_data', methods=['GET'])
 def get_stock_data():
@@ -70,64 +80,64 @@ def get_stock_metrics():
     app.logger.info(f"Returning metrics for {symbol}: {result}")
     return jsonify(result)
 
-@app.route('/api/stock_earnings', methods=['GET'])
-def get_stock_earnings():
-    symbols = request.args.get('symbols')
-    if not symbols:
-        return jsonify({"error": "No symbols provided"}), 400
-    
-    symbols = symbols.split(',')
-    app.logger.info(f"Fetching earnings data for {symbols}")
+@app.route('/api/process_query', methods=['POST'])
+def process_query():
+    data = request.json
+    query = data.get('query')
 
-    result = {}
-    for symbol in symbols:
-        stock = yf.Ticker(symbol)
-        
-        # Fetch income statement data
-        income_stmt = stock.income_stmt
-        app.logger.info(f"Income statement data for {symbol}: {income_stmt}")
+    if not query:
+        return jsonify({"error": "No query provided"}), 400
 
-        # Fetch earnings dates
-        earnings_dates = stock.earnings_dates
-        app.logger.info(f"Earnings dates data for {symbol}: {earnings_dates}")
+    try:
+        completion = client.chat.completions.create(
+            model="gpt-4o-mini",  # Kept the original model name
+            messages=[
+                {
+                    "role": "system",
+                    "content": (
+                        "You are a helpful assistant that processes stock-related queries. Given a user's question, return a JSON object with the following fields:\n"
+                        "- 'actions' (array of action objects, each containing:)\n"
+                        "  - 'type' (e.g., 'getPrice', 'getHistory', 'getNews', 'compare', 'getMetrics', 'getEarnings')\n"
+                        "  - 'symbols' (array of stock tickers)\n"
+                        "  - 'startDate' (YYYY-MM-DD format for the start of the date range, if applicable)\n"
+                        "  - 'endDate' (YYYY-MM-DD format for the end of the date range, if applicable)\n"
+                        "  - 'metrics' (array of requested financial metrics, ONLY if explicitly asked for)\n"
+                        "- 'description' (a brief explanation of the query)\n"
+                        "- 'keyDates' (an array of objects, each containing a 'date' in YYYY-MM-DD format, a 'description' of the event, and a 'symbol' indicating which stock it relates to)\n\n"
+                        "Important guidelines:\n"
+                        "1. Always provide a date range of at least 30 days for historical data, even if the query specifies a shorter period or a single date.\n"
+                        "2. For queries about specific events, set the date range to start at least 14 days before the event and end at least 14 days after the event.\n"
+                        "3. If multiple events are mentioned, adjust the date range to encompass all events plus the additional context periods.\n"
+                        "4. For general queries without specific dates, provide a reasonable date range based on the context of the query.\n"
+                        "5. Ensure that the 'keyDates' array includes all relevant dates mentioned in the query.\n"
+                        "6. If a stock comparison is requested, use the 'compare' action type.\n"
+                        "7. ONLY include the 'getMetrics' action type if financial metrics are explicitly requested by the user.\n"
+                        "8. Support multiple actions in a single query, e.g., both comparison and metrics retrieval if both are requested.\n"
+                        "9. Only return multiple actions if the user asks for them. Otherwise, return only one action per response.\n"
+                        "10. When requesting metrics, use the following available metrics: marketCap, trailingPE, forwardPE, dividendYield, beta, fiftyTwoWeekHigh, fiftyDayAverage, twoHundredDayAverage, averageVolume, regularMarketPrice, regularMarketDayHigh, regularMarketDayLow.\n"
+                        "11. If earnings data is requested for multiple stocks, use the 'getEarnings' action type with multiple symbols in the 'symbols' array.\n"
+                        "12. Return only the JSON object without any markdown formatting."
+                    ),
+                },
+                {"role": "user", "content": query},
+            ],
+        )
 
-        # Process income statement data
-        earnings_data = []
-        if income_stmt is not None and not income_stmt.empty:
-            try:
-                net_income = income_stmt.loc['Net Income']
-                total_revenue = income_stmt.loc['Total Revenue']
-                for date, income in net_income.items():
-                    earnings_data.append({
-                        'Year': date.strftime('%Y'),
-                        'Earnings': float(income),
-                        'Revenue': float(total_revenue.get(date, 0))
-                    })
-            except Exception as e:
-                app.logger.error(f"Error processing income statement for {symbol}: {str(e)}")
+        raw_response = completion.choices[0].message.content
+        cleaned_content = raw_response.replace("```json\n", "").replace("\n```", "").strip()
+        result = json.loads(cleaned_content)
 
-        # Process earnings dates data
-        earnings_dates_data = []
-        current_date = datetime.now().date()
-        if earnings_dates is not None and not earnings_dates.empty:
-            try:
-                for date, row in earnings_dates.iterrows():
-                    if date.date() > current_date and pd.notnull(row['EPS Estimate']):
-                        earnings_dates_data.append({
-                            'Date': date.strftime('%Y-%m-%d'),
-                            'EPS_Estimate': float(row['EPS Estimate']),
-                            'Revenue_Estimate': None  # Yahoo Finance doesn't provide revenue estimates
-                        })
-            except Exception as e:
-                app.logger.error(f"Error processing earnings dates for {symbol}: {str(e)}")
+        # Ensure there are default metrics if none are specified
+        for action in result['actions']:
+            if action['type'] == 'getMetrics' and (not action.get('metrics') or len(action['metrics']) == 0):
+                action['metrics'] = [
+                    "P/E", "EPS", "Market Cap", "Dividend Yield", "52 Week High", "52 Week Low"
+                ]
 
-        result[symbol] = {
-            'historical_earnings': earnings_data,
-            'upcoming_earnings': earnings_dates_data
-        }
-
-    app.logger.info(f"Returning earnings data: {result}")
-    return jsonify(result)
+        return jsonify(result)
+    except Exception as e:
+        app.logger.error(f"Error processing query: {str(e)}")
+        return jsonify({"error": "Failed to process query"}), 500
 
 if __name__ == '__main__':
     app.run(debug=True)

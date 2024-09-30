@@ -44,40 +44,30 @@ def get_stock_data():
 
 @app.route('/api/stock_metrics', methods=['GET'])
 def get_stock_metrics():
-    symbol = request.args.get('symbol')
+    symbols = request.args.get('symbols').split(',')
     metrics = request.args.get('metrics').split(',')
 
-    app.logger.info(f"Requested metrics for {symbol}: {metrics}")
-
-    stock = yf.Ticker(symbol)
-    info = stock.info
-
-    app.logger.info(f"Raw info from yfinance: {info}")
-
-    # Map our metric names to yfinance metric names
-    metric_mapping = {
-        'P/E': 'trailingPE',
-        'EPS': 'trailingEps',
-        'Market Cap': 'marketCap',
-        'Dividend Yield': 'dividendYield',
-        '52 Week High': 'fiftyTwoWeekHigh',
-        '52 Week Low': 'fiftyTwoWeekLow'
-    }
+    app.logger.info(f"Requested metrics for {symbols}: {metrics}")
 
     result = {}
-    for metric in metrics:
-        yf_metric = metric_mapping.get(metric, metric)
-        if yf_metric in info:
-            value = info[yf_metric]
-            if isinstance(value, (int, float)):
-                result[metric] = value
-            else:
-                result[metric] = str(value)
-        else:
-            result[metric] = 'N/A'
-        app.logger.info(f"Metric {metric} for {symbol}: {result[metric]}")
+    for symbol in symbols:
+        stock = yf.Ticker(symbol)
+        info = stock.info
 
-    app.logger.info(f"Returning metrics for {symbol}: {result}")
+        symbol_metrics = {}
+        for metric in metrics:
+            if metric in info:
+                value = info[metric]
+                if isinstance(value, (int, float)):
+                    symbol_metrics[metric] = value
+                else:
+                    symbol_metrics[metric] = str(value)
+            else:
+                symbol_metrics[metric] = 'N/A'
+        
+        result[symbol] = symbol_metrics
+        app.logger.info(f"Metrics for {symbol}: {symbol_metrics}")
+
     return jsonify(result)
 
 @app.route('/api/process_query', methods=['POST'])
@@ -90,7 +80,7 @@ def process_query():
 
     try:
         completion = client.chat.completions.create(
-            model="gpt-4o-mini",  # Kept the original model name
+            model="gpt-4-0125-preview",
             messages=[
                 {
                     "role": "system",
@@ -113,10 +103,9 @@ def process_query():
                         "6. If a stock comparison is requested, use the 'compare' action type.\n"
                         "7. ONLY include the 'getMetrics' action type if financial metrics are explicitly requested by the user.\n"
                         "8. Support multiple actions in a single query, e.g., both comparison and metrics retrieval if both are requested.\n"
-                        "9. Only return multiple actions if the user asks for them. Otherwise, return only one action per response.\n"
-                        "10. When requesting metrics, use the following available metrics: marketCap, trailingPE, forwardPE, dividendYield, beta, fiftyTwoWeekHigh, fiftyDayAverage, twoHundredDayAverage, averageVolume, regularMarketPrice, regularMarketDayHigh, regularMarketDayLow.\n"
-                        "11. If earnings data is requested for multiple stocks, use the 'getEarnings' action type with multiple symbols in the 'symbols' array.\n"
-                        "12. Return only the JSON object without any markdown formatting."
+                        "9. When requesting metrics, use any of the following available metrics: marketCap, trailingPE, forwardPE, dividendYield, beta, fiftyTwoWeekHigh, fiftyDayAverage, twoHundredDayAverage, averageVolume, regularMarketPrice, regularMarketDayHigh, regularMarketDayLow, totalCash, totalCashPerShare, debtToEquity, returnOnEquity, freeCashflow, operatingCashflow, earningsGrowth, revenueGrowth, grossMargins, operatingMargins, profitMargins, bookValue, priceToBook, earningsQuarterlyGrowth, netIncomeToCommon, trailingEps, forwardEps, pegRatio, enterpriseToRevenue, enterpriseToEbitda, 52WeekChange, SandP52WeekChange, lastDividendValue, lastDividendDate.\n"
+                        "10. If earnings data is requested for multiple stocks, use the 'getEarnings' action type with multiple symbols in the 'symbols' array.\n"
+                        "11. Return only the JSON object without any markdown formatting."
                     ),
                 },
                 {"role": "user", "content": query},

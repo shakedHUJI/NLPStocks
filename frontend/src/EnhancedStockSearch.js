@@ -187,11 +187,11 @@ export default function EnhancedStockSearch() {
     });
   };
 
-  const fetchMetrics = async (symbol, requestedMetrics) => {
+  const fetchMetrics = async (symbols, requestedMetrics) => {
     try {
       const response = await axios.get(`${API_URL}/api/stock_metrics`, {
         params: {
-          symbol: symbol,
+          symbols: symbols.join(","),
           metrics: requestedMetrics.join(","),
         },
       });
@@ -199,38 +199,29 @@ export default function EnhancedStockSearch() {
       const fetchedMetrics = response.data;
 
       // Format the metrics as needed
-      Object.keys(fetchedMetrics).forEach((metric) => {
-        const value = fetchedMetrics[metric];
-        if (typeof value === "number") {
-          if (metric === "marketCap") {
-            fetchedMetrics[metric] = formatLargeNumber(value);
-          } else if (
-            [
-              "dividendYield",
-              "profitMargin",
-              "operatingMarginTTM",
-              "returnOnAssetsTTM",
-              "returnOnEquityTTM",
-            ].includes(metric)
-          ) {
-            fetchedMetrics[metric] = formatPercentage(value);
-          } else {
-            fetchedMetrics[metric] = formatNumber(value);
+      Object.keys(fetchedMetrics).forEach((symbol) => {
+        Object.keys(fetchedMetrics[symbol]).forEach((metric) => {
+          const value = fetchedMetrics[symbol][metric];
+          if (typeof value === "number") {
+            if (["marketCap", "totalCash", "freeCashflow", "operatingCashflow", "netIncomeToCommon"].includes(metric)) {
+              fetchedMetrics[symbol][metric] = formatLargeNumber(value);
+            } else if (
+              ["dividendYield", "profitMargins", "operatingMargins", "grossMargins", "returnOnEquity", "earningsGrowth", "revenueGrowth", "52WeekChange", "SandP52WeekChange"].includes(metric)
+            ) {
+              fetchedMetrics[symbol][metric] = formatPercentage(value);
+            } else {
+              fetchedMetrics[symbol][metric] = formatNumber(value);
+            }
           }
-        } else {
-          fetchedMetrics[metric] = value;
-        }
+        });
       });
 
-      setMetrics((prevMetrics) => ({
-        ...prevMetrics,
-        [symbol]: fetchedMetrics,
-      }));
+      setMetrics(fetchedMetrics);
       setLoadingState("");
     } catch (err) {
       console.error("Error fetching metrics:", err);
       setError(
-        `Failed to fetch metrics for ${symbol}. Please check the console for more details.`
+        `Failed to fetch metrics. Please check the console for more details.`
       );
       setLoadingState("");
     }
@@ -266,9 +257,7 @@ export default function EnhancedStockSearch() {
       }
 
       if (metricsAction) {
-        metricsAction.symbols.forEach((symbol) => {
-          fetchMetrics(symbol, metricsAction.metrics);
-        });
+        fetchMetrics(metricsAction.symbols, metricsAction.metrics);
       }
     },
   });

@@ -27,6 +27,10 @@ def get_stock_data():
     start_date = request.args.get('start_date')
     end_date = request.args.get('end_date')
 
+    # If end_date is 'current', use today's date
+    if end_date == 'current':
+        end_date = datetime.now().strftime('%Y-%m-%d')
+
     app.logger.info(f"Fetching data for symbols: {symbols}, start: {start_date}, end: {end_date}")
 
     data = {}
@@ -91,12 +95,15 @@ def process_query():
                         "3. When specific metrics aren't requested, choose metrics that you believe are most relevant to the stocks and context of the query.\n"
                         "4. Include news data when you think it would provide valuable context to the analysis.\n"
                         "5. For general queries about a stock's performance, provide a mix of historical data, key metrics, and recent news if available.\n"
-                        "6. Always aim to provide the most insightful and comprehensive response possible, utilizing all available data sources at your disposal.\n\n"
+                        "6. Always aim to provide the most insightful and comprehensive response possible, utilizing all available data sources at your disposal.\n"
+                        "7. When retrieving historical stock price data, identify and include key dates that might be significant for the stock's performance. These could include earnings release dates, major company announcements, or notable market events.\n"
+                        "8. If the query implies a need for the most recent data, use 'current' as the end date. The backend will interpret this and fetch the most up-to-date information available.\n\n"
                         "Return a JSON object with the following fields:\n"
                         "- 'actions' (array of action objects, each containing:)\n"
                         "  - 'type' (e.g., 'getPrice', 'getHistory', 'getNews', 'compare', 'getMetrics', 'getEarnings')\n"
                         "  - 'symbols' (array of stock tickers)\n"
-                        "  - 'startDate' and 'endDate' (YYYY-MM-DD format, if applicable)\n"
+                        "  - 'startDate' (YYYY-MM-DD format)\n"
+                        "  - 'endDate' (YYYY-MM-DD format or 'current' for the most recent data)\n"
                         "  - 'metrics' (array of requested financial metrics, if applicable)\n"
                         "- 'description' (a brief explanation of your analysis approach)\n"
                         "- 'keyDates' (array of objects with 'date', 'description', and 'symbol' fields for significant events)\n\n"

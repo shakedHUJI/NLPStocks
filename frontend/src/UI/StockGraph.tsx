@@ -45,6 +45,16 @@ const StockGraph: React.FC<StockGraphProps> = ({
   onClose,
   theme,
 }) => {
+  const getGraphTitle = () => {
+    if (compareMode) {
+      return `${stockSymbols.join(" vs ")} Comparison`;
+    } else {
+      return stockSymbols.length === 1
+        ? `${stockSymbols[0]} Stock Performance`
+        : `${stockSymbols.join(", ")} Stock Performance`;
+    }
+  };
+
   return (
     <Card className="min-w-[300px] w-full relative">
       <Button
@@ -58,13 +68,8 @@ const StockGraph: React.FC<StockGraphProps> = ({
       <CardHeader>
         <CardTitle className="flex items-center">
           <TrendingUp className="mr-2 h-6 w-6 text-blue-500" />
-          {compareMode
-            ? `${stockSymbols.join(" vs ")} Comparison`
-            : `${stockSymbols[0]} Stock Performance`}
+          {getGraphTitle()}
         </CardTitle>
-        <p className="text-sm mt-2 text-gray-600 dark:text-gray-300">
-          {description}
-        </p>
       </CardHeader>
       <CardContent>
         <div
@@ -117,14 +122,21 @@ const StockGraph: React.FC<StockGraphProps> = ({
               <XAxis
                 dataKey="date"
                 stroke={theme === "dark" ? "#fff" : "#888"}
-                style={{ fontSize: "0.6rem" }}
-                tick={(props) => (
-                  <text
-                    {...props}
-                    textAnchor="end"
-                    transform={`rotate(-45 ${props.x} ${props.y})`}
-                    dy={10}
-                  />
+                style={{ fontSize: "0.1rem" }}
+                tick={({ x, y, payload }) => (
+                  <g transform={`translate(${x},${y})`}>
+                    <text
+                      x={0}
+                      y={0}
+                      dy={16}
+                      textAnchor="end"
+                      fill={theme === "dark" ? "#fff" : "#888"}
+                      transform="rotate(-35)"
+                      fontSize="0.6rem" // Reduced from 0.7rem to 0.5rem
+                    >
+                      {payload.value}
+                    </text>
+                  </g>
                 )}
                 height={60}
                 interval="preserveStartEnd"

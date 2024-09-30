@@ -405,6 +405,22 @@ export default function EnhancedStockSearch() {
                 </motion.p>
               )}
 
+              {aiAnalysisDescription && (
+                <motion.div
+                  key="ai-analysis"
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: 20 }}
+                  transition={{ duration: 0.5 }}
+                  className="w-full mt-8 mb-4"
+                >
+                  <h2 className="text-xl font-semibold text-gray-800 dark:text-gray-200 mb-2">AI Analysis Approach</h2>
+                  <p className="text-sm text-gray-600 dark:text-gray-300">
+                    {aiAnalysisDescription}
+                  </p>
+                </motion.div>
+              )}
+
               {showGraph && (
                 <motion.div
                   key="graph"
@@ -541,31 +557,6 @@ export default function EnhancedStockSearch() {
                           </li>
                         ))}
                       </ul>
-                    </CardContent>
-                  </Card>
-                </motion.div>
-              )}
-
-              {aiAnalysisDescription && (
-                <motion.div
-                  key="ai-analysis"
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: 20 }}
-                  transition={{ duration: 0.5 }}
-                  className="w-full mt-8"
-                >
-                  <Card className="min-w-[300px] w-full">
-                    <CardHeader>
-                      <CardTitle className="flex items-center">
-                        <TrendingUp className="mr-2 h-6 w-6 text-blue-500" />
-                        AI Analysis Approach
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <p className="text-sm text-gray-600 dark:text-gray-300">
-                        {aiAnalysisDescription}
-                      </p>
                     </CardContent>
                   </Card>
                 </motion.div>

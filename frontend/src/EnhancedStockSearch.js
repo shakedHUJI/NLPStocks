@@ -21,15 +21,15 @@ import axios from "axios";
 import { useTheme } from "next-themes";
 import { parseISO, isAfter, isBefore } from "date-fns";
 
-import { Button } from "./button.tsx";
-import { Input } from "./input.tsx";
-import { Card, CardHeader, CardTitle, CardContent } from "./card.tsx";
+import { Button } from "./UI/button.tsx";
+import { Input } from "./UI/input.tsx";
+import { Card, CardHeader, CardTitle, CardContent } from "./UI/card.tsx";
 import {
   Tooltip,
   TooltipTrigger,
   TooltipContent,
   TooltipProvider,
-} from "./tooltip.tsx";
+} from "./UI/tooltip.tsx";
 
 import "./EnhancedStockSearch.css";
 import LoadingDots from "./components/LoadingDots";

@@ -66,6 +66,7 @@ export default function EnhancedStockSearch() {
   const [originalStockData, setOriginalStockData] = useState([]);
   const [metrics, setMetrics] = useState({});
   const [newsData, setNewsData] = useState([]);
+  const [aiAnalysisDescription, setAiAnalysisDescription] = useState("");
 
   const { theme, setTheme } = useTheme();
 
@@ -80,39 +81,33 @@ export default function EnhancedStockSearch() {
     setError(null);
     setLoadingState("Analyzing your search");
     setMetrics({});
-    setNewsData([]); // Clear previous news data
+    setNewsData([]);
+    setAiAnalysisDescription("");
 
     try {
       const result = await processQuery(query);
       console.log("AI Query result:", result);
 
       if (result && result.actions) {
-        const newsAction = result.actions.find(action => action.type === 'getNews');
-        if (newsAction && newsAction.symbols && newsAction.symbols.length > 0) {
-          setLoadingState("Fetching news data");
-          await fetchNewsData(newsAction.symbols[0]);
-        }
+        setAiAnalysisDescription(result.description || "");
 
-        // Handle other actions (compare, getMetrics, etc.)
-        const compareAction = result.actions.find(
-          (action) => action.type === "compare" || action.type === "getHistory"
-        );
-        const metricsAction = result.actions.find(
-          (action) => action.type === "getMetrics"
-        );
-
-        if (compareAction) {
-          setStockSymbols(compareAction.symbols);
-          setCompareMode(compareAction.type === "compare");
-          fetchStockData(
-            compareAction.symbols,
-            compareAction.startDate,
-            compareAction.endDate
-          );
-        }
-
-        if (metricsAction) {
-          fetchMetrics(metricsAction.symbols, metricsAction.metrics);
+        for (const action of result.actions) {
+          switch (action.type) {
+            case 'getNews':
+              setLoadingState("Fetching news data");
+              await fetchNewsData(action.symbols[0]);
+              break;
+            case 'compare':
+            case 'getHistory':
+              setStockSymbols(action.symbols);
+              setCompareMode(action.type === "compare");
+              fetchStockData(action.symbols, action.startDate, action.endDate);
+              break;
+            case 'getMetrics':
+              fetchMetrics(action.symbols, action.metrics);
+              break;
+            // Add more cases for other action types if needed
+          }
         }
 
         setDescription(result.description || "");
@@ -520,36 +515,57 @@ export default function EnhancedStockSearch() {
                       </CardTitle>
                     </CardHeader>
                     <CardContent>
-                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                      <ul className="space-y-4">
                         {newsData.map((item, index) => (
-                          <a
-                            key={item.uuid}
-                            href={item.link}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="block hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors duration-200"
-                          >
-                            <div className="p-4 h-full flex flex-col">
+                          <li key={item.uuid}>
+                            <a
+                              href={item.link}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="flex items-start hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors duration-200 p-2"
+                            >
                               {item.thumbnail && item.thumbnail.resolutions && (
                                 <img
                                   src={item.thumbnail.resolutions[0].url}
                                   alt={item.title}
-                                  className="w-full h-32 object-cover rounded-lg mb-2"
+                                  className="w-16 h-16 object-cover rounded-md mr-4 flex-shrink-0"
                                 />
                               )}
-                              <h3 className="font-semibold text-sm mb-1 flex-grow">
-                                {item.title}
-                              </h3>
-                              <p className="text-xs text-gray-500 dark:text-gray-400">
-                                {item.publisher} -{" "}
-                                {new Date(
-                                  item.providerPublishTime * 1000
-                                ).toLocaleDateString()}
-                              </p>
-                            </div>
-                          </a>
+                              <div className="flex-grow">
+                                <h3 className="font-semibold text-sm mb-1">{item.title}</h3>
+                                <p className="text-xs text-gray-500 dark:text-gray-400">
+                                  {item.publisher} - {new Date(item.providerPublishTime * 1000).toLocaleDateString()}
+                                </p>
+                              </div>
+                            </a>
+                          </li>
                         ))}
-                      </div>
+                      </ul>
+                    </CardContent>
+                  </Card>
+                </motion.div>
+              )}
+
+              {aiAnalysisDescription && (
+                <motion.div
+                  key="ai-analysis"
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: 20 }}
+                  transition={{ duration: 0.5 }}
+                  className="w-full mt-8"
+                >
+                  <Card className="min-w-[300px] w-full">
+                    <CardHeader>
+                      <CardTitle className="flex items-center">
+                        <TrendingUp className="mr-2 h-6 w-6 text-blue-500" />
+                        AI Analysis Approach
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <p className="text-sm text-gray-600 dark:text-gray-300">
+                        {aiAnalysisDescription}
+                      </p>
                     </CardContent>
                   </Card>
                 </motion.div>

@@ -80,32 +80,28 @@ def process_query():
 
     try:
         completion = client.chat.completions.create(
-            model="gpt-4-0125-preview",
+            model="gpt-4o-mini",
             messages=[
                 {
                     "role": "system",
                     "content": (
-                        "You are a helpful assistant that processes stock-related queries. Given a user's question, return a JSON object with the following fields:\n"
+                        "You are an intelligent assistant specializing in stock market analysis. Your task is to interpret user queries about stocks and provide comprehensive insights. When faced with ambiguous or open-ended requests, you have the autonomy to decide which actions and data would be most valuable to the user. Here are your guidelines:\n\n"
+                        "1. Interpret the user's intent and provide a holistic response that may include multiple types of data and analyses.\n"
+                        "2. For comparison queries, consider including both historical price data and relevant financial metrics.\n"
+                        "3. When specific metrics aren't requested, choose metrics that you believe are most relevant to the stocks and context of the query.\n"
+                        "4. Include news data when you think it would provide valuable context to the analysis.\n"
+                        "5. For general queries about a stock's performance, provide a mix of historical data, key metrics, and recent news if available.\n"
+                        "6. Always aim to provide the most insightful and comprehensive response possible, utilizing all available data sources at your disposal.\n\n"
+                        "Return a JSON object with the following fields:\n"
                         "- 'actions' (array of action objects, each containing:)\n"
                         "  - 'type' (e.g., 'getPrice', 'getHistory', 'getNews', 'compare', 'getMetrics', 'getEarnings')\n"
                         "  - 'symbols' (array of stock tickers)\n"
-                        "  - 'startDate' (YYYY-MM-DD format for the start of the date range, if applicable)\n"
-                        "  - 'endDate' (YYYY-MM-DD format for the end of the date range, if applicable)\n"
-                        "  - 'metrics' (array of requested financial metrics, ONLY if explicitly asked for)\n"
-                        "- 'description' (a brief explanation of the query)\n"
-                        "- 'keyDates' (an array of objects, each containing a 'date' in YYYY-MM-DD format, a 'description' of the event, and a 'symbol' indicating which stock it relates to)\n\n"
-                        "Important guidelines:\n"
-                        "1. Always provide a date range of at least 30 days for historical data, even if the query specifies a shorter period or a single date.\n"
-                        "2. For queries about specific events, set the date range to start at least 14 days before the event and end at least 14 days after the event.\n"
-                        "3. If multiple events are mentioned, adjust the date range to encompass all events plus the additional context periods.\n"
-                        "4. For general queries without specific dates, provide a reasonable date range based on the context of the query.\n"
-                        "5. Ensure that the 'keyDates' array includes all relevant dates mentioned in the query.\n"
-                        "6. If a stock comparison is requested, use the 'compare' action type.\n"
-                        "7. ONLY include the 'getMetrics' action type if financial metrics are explicitly requested by the user.\n"
-                        "8. Support multiple actions in a single query, e.g., both comparison and metrics retrieval if both are requested.\n"
-                        "9. When requesting metrics, use any of the following available metrics: marketCap, trailingPE, forwardPE, dividendYield, beta, fiftyTwoWeekHigh, fiftyDayAverage, twoHundredDayAverage, averageVolume, regularMarketPrice, regularMarketDayHigh, regularMarketDayLow, totalCash, totalCashPerShare, debtToEquity, returnOnEquity, freeCashflow, operatingCashflow, earningsGrowth, revenueGrowth, grossMargins, operatingMargins, profitMargins, bookValue, priceToBook, earningsQuarterlyGrowth, netIncomeToCommon, trailingEps, forwardEps, pegRatio, enterpriseToRevenue, enterpriseToEbitda, 52WeekChange, SandP52WeekChange, lastDividendValue, lastDividendDate.\n"
-                        "10. If earnings data is requested for multiple stocks, use the 'getEarnings' action type with multiple symbols in the 'symbols' array.\n"
-                        "11. Return only the JSON object without any markdown formatting."
+                        "  - 'startDate' and 'endDate' (YYYY-MM-DD format, if applicable)\n"
+                        "  - 'metrics' (array of requested financial metrics, if applicable)\n"
+                        "- 'description' (a brief explanation of your analysis approach)\n"
+                        "- 'keyDates' (array of objects with 'date', 'description', and 'symbol' fields for significant events)\n\n"
+                        "Available metrics include: marketCap, trailingPE, forwardPE, dividendYield, beta, fiftyTwoWeekHigh, fiftyDayAverage, twoHundredDayAverage, averageVolume, regularMarketPrice, regularMarketDayHigh, regularMarketDayLow, totalCash, totalCashPerShare, debtToEquity, returnOnEquity, freeCashflow, operatingCashflow, earningsGrowth, revenueGrowth, grossMargins, operatingMargins, profitMargins, bookValue, priceToBook, earningsQuarterlyGrowth, netIncomeToCommon, trailingEps, forwardEps, pegRatio, enterpriseToRevenue, enterpriseToEbitda, 52WeekChange, SandP52WeekChange, lastDividendValue, lastDividendDate.\n"
+                        "Ensure your response is a valid JSON object without any additional formatting."
                     ),
                 },
                 {"role": "user", "content": query},
@@ -115,13 +111,6 @@ def process_query():
         raw_response = completion.choices[0].message.content
         cleaned_content = raw_response.replace("```json\n", "").replace("\n```", "").strip()
         result = json.loads(cleaned_content)
-
-        # Ensure there are default metrics if none are specified
-        for action in result['actions']:
-            if action['type'] == 'getMetrics' and (not action.get('metrics') or len(action['metrics']) == 0):
-                action['metrics'] = [
-                    "P/E", "EPS", "Market Cap", "Dividend Yield", "52 Week High", "52 Week Low"
-                ]
 
         return jsonify(result)
     except Exception as e:

@@ -62,14 +62,6 @@ const StockGraph: React.FC<StockGraphProps> = ({
           <TrendingUp className="mr-2 h-6 w-6 text-blue-500" />
           {getGraphTitle()}
         </CardTitle>
-        <Button
-          variant="ghost"
-          size="icon"
-          className="absolute top-2 right-2 z-10"
-          onClick={onClose}
-        >
-          <X className="h-4 w-4" />
-        </Button>
       </CardHeader>
       <CardContent>
         <div

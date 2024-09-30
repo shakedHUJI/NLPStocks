@@ -1,7 +1,7 @@
 import * as React from "react"
 import { cn } from "../lib/utils.ts"
 import { ChevronDown, ChevronUp } from "lucide-react"
-import { motion, AnimatePresence } from "framer-motion"
+import { motion, AnimatePresence, HTMLMotionProps } from "framer-motion"
 
 const Card = React.forwardRef<
   HTMLDivElement,
@@ -19,10 +19,10 @@ const Card = React.forwardRef<
       className={cn(
         "rounded-lg border bg-card text-card-foreground shadow-sm",
         className
-      )}
+      ) as any}
       whileHover={!isOpen && toggleable ? { scale: 1.02 } : {}}
       transition={{ duration: 0.3 }}
-      {...props}
+      {...(props as HTMLMotionProps<'div'>)}
     >
       {toggleable ? (
         <motion.div

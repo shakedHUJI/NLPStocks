@@ -2,18 +2,6 @@
 
 import React, { useState, useEffect } from "react";
 import { ThemeProvider } from "next-themes";
-import {
-  AreaChart,
-  Area,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  ResponsiveContainer,
-  Tooltip as RechartsTooltip,
-  ReferenceArea,
-  ReferenceDot,
-  Legend,
-} from "recharts";
 import { Search, Moon, Sun, TrendingUp, X } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import AIQueryProcessor from "./AIQueryProcessor";
@@ -33,12 +21,12 @@ import {
 
 import "./EnhancedStockSearch.css";
 import LoadingDots from "./components/LoadingDots";
-import CustomTooltip from "./components/CustomTooltip";
 import {
   formatLargeNumber,
   formatPercentage,
   formatNumber,
 } from "./utils/formatters";
+import StockGraph from "./UI/StockGraph.tsx";
 
 const API_URL = process.env.REACT_APP_API_URL || "http://localhost:5000";
 console.log("API_URL:", API_URL);
@@ -388,156 +376,20 @@ export default function EnhancedStockSearch() {
                   transition={{ duration: 0.5 }}
                   className="w-full mt-8"
                 >
-                  <Card className="min-w-[300px] w-full relative">
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="absolute top-2 right-2"
-                      onClick={() => setShowGraph(false)}
-                    >
-                      <X className="h-4 w-4" />
-                    </Button>
-                    <CardHeader>
-                      <CardTitle className="flex items-center">
-                        <TrendingUp className="mr-2 h-6 w-6 text-blue-500" />
-                        {compareMode
-                          ? `${stockSymbols.join(" vs ")} Comparison`
-                          : `${stockSymbols[0]} Stock Performance`}
-                      </CardTitle>
-                      <p className="text-sm mt-2 text-gray-600 dark:text-gray-300">
-                        {description}
-                      </p>
-                    </CardHeader>
-                    <CardContent>
-                      <div
-                        className="w-full h-[400px] select-none"
-                        onDoubleClick={handleDoubleClick}
-                      >
-                        <ResponsiveContainer width="100%" height="100%">
-                          <AreaChart
-                            data={stockData}
-                            margin={{ top: 20, right: 20, left: 0, bottom: 60 }}
-                            onMouseDown={(e) =>
-                              setZoomState((prev) => ({
-                                ...prev,
-                                refAreaLeft: e.activeLabel,
-                              }))
-                            }
-                            onMouseMove={(e) =>
-                              zoomState.refAreaLeft &&
-                              setZoomState((prev) => ({
-                                ...prev,
-                                refAreaRight: e.activeLabel,
-                              }))
-                            }
-                            onMouseUp={handleZoom}
-                          >
-                            <defs>
-                              {stockSymbols.map((symbol, index) => (
-                                <linearGradient
-                                  key={symbol}
-                                  id={`color${symbol}`}
-                                  x1="0"
-                                  y1="0"
-                                  x2="0"
-                                  y2="1"
-                                >
-                                  <stop
-                                    offset="5%"
-                                    stopColor={colorMap[symbol]}
-                                    stopOpacity={0.8}
-                                  />
-                                  <stop
-                                    offset="95%"
-                                    stopColor={colorMap[symbol]}
-                                    stopOpacity={0}
-                                  />
-                                </linearGradient>
-                              ))}
-                            </defs>
-                            <CartesianGrid
-                              strokeDasharray="3 3"
-                              stroke="#ccc"
-                            />
-                            <XAxis
-                              dataKey="date"
-                              stroke={theme === "dark" ? "#fff" : "#888"}
-                              style={{ fontSize: "0.6rem" }}
-                              tick={{ angle: -45, textAnchor: "end", dy: 10 }}
-                              height={60}
-                              interval="preserveStartEnd"
-                              allowDataOverflow
-                              domain={["dataMin", "dataMax"]}
-                            />
-                            <YAxis
-                              stroke={theme === "dark" ? "#fff" : "#888"}
-                              style={{ fontSize: "0.6rem" }}
-                              width={40}
-                              allowDataOverflow
-                            />
-                            <RechartsTooltip
-                              content={
-                                <CustomTooltip
-                                  keyDates={keyDates}
-                                  colors={colorMap}
-                                />
-                              }
-                            />
-                            <Legend
-                              verticalAlign="bottom"
-                              height={36}
-                              iconType="circle"
-                              iconSize={8}
-                              wrapperStyle={{
-                                paddingTop: "20px",
-                                fontSize: "0.8rem",
-                              }}
-                              formatter={(value, entry) => (
-                                <span style={{ color: colorMap[value] }}>
-                                  {value}
-                                </span>
-                              )}
-                            />
-                            {stockSymbols.map((symbol) => (
-                              <Area
-                                key={symbol}
-                                type="monotone"
-                                dataKey={symbol}
-                                stroke={colorMap[symbol]}
-                                fillOpacity={1}
-                                fill={`url(#color${symbol})`}
-                              />
-                            ))}
-                            {keyDates.map((keyDate, index) => {
-                              const dataPoint = stockData.find(
-                                (item) => item.date === keyDate.date
-                              );
-                              return dataPoint ? (
-                                <ReferenceDot
-                                  key={index}
-                                  x={keyDate.date}
-                                  y={dataPoint[keyDate.symbol]}
-                                  r={4}
-                                  fill="red"
-                                  fillOpacity={0.5}
-                                  stroke="none"
-                                />
-                              ) : null;
-                            })}
-                            {zoomState.refAreaLeft && zoomState.refAreaRight ? (
-                              <ReferenceArea
-                                x1={zoomState.refAreaLeft}
-                                x2={zoomState.refAreaRight}
-                                strokeOpacity={0.3}
-                                fill="#8884d8"
-                                fillOpacity={0.3}
-                              />
-                            ) : null}
-                          </AreaChart>
-                        </ResponsiveContainer>
-                      </div>
-                    </CardContent>
-                  </Card>
+                  <StockGraph
+                    stockData={stockData}
+                    stockSymbols={stockSymbols}
+                    colorMap={colorMap}
+                    description={description}
+                    keyDates={keyDates}
+                    compareMode={compareMode}
+                    zoomState={zoomState}
+                    setZoomState={setZoomState}
+                    handleZoom={handleZoom}
+                    handleDoubleClick={handleDoubleClick}
+                    onClose={() => setShowGraph(false)}
+                    theme={theme}
+                  />
                 </motion.div>
               )}
 

@@ -2,7 +2,16 @@
 
 import React, { useState, useEffect } from "react";
 import { ThemeProvider } from "next-themes";
-import { Search, Moon, Sun, TrendingUp, X, ExternalLink } from "lucide-react";
+import {
+  Search,
+  Moon,
+  Sun,
+  TrendingUp,
+  X,
+  ExternalLink,
+  ChevronDown,
+  ChevronUp,
+} from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import AIQueryProcessor from "./AIQueryProcessor";
 import axios from "axios";
@@ -67,6 +76,7 @@ export default function EnhancedStockSearch() {
   const [metrics, setMetrics] = useState({});
   const [newsData, setNewsData] = useState([]);
   const [aiAnalysisDescription, setAiAnalysisDescription] = useState("");
+  const [showAIAnalysis, setShowAIAnalysis] = useState(false);
 
   const { theme, setTheme } = useTheme();
 
@@ -93,17 +103,17 @@ export default function EnhancedStockSearch() {
 
         for (const action of result.actions) {
           switch (action.type) {
-            case 'getNews':
+            case "getNews":
               setLoadingState("Fetching news data");
               await fetchNewsData(action.symbols[0]);
               break;
-            case 'compare':
-            case 'getHistory':
+            case "compare":
+            case "getHistory":
               setStockSymbols(action.symbols);
               setCompareMode(action.type === "compare");
               fetchStockData(action.symbols, action.startDate, action.endDate);
               break;
-            case 'getMetrics':
+            case "getMetrics":
               fetchMetrics(action.symbols, action.metrics);
               break;
             // Add more cases for other action types if needed
@@ -238,10 +248,28 @@ export default function EnhancedStockSearch() {
         Object.keys(fetchedMetrics[symbol]).forEach((metric) => {
           const value = fetchedMetrics[symbol][metric];
           if (typeof value === "number") {
-            if (["marketCap", "totalCash", "freeCashflow", "operatingCashflow", "netIncomeToCommon"].includes(metric)) {
+            if (
+              [
+                "marketCap",
+                "totalCash",
+                "freeCashflow",
+                "operatingCashflow",
+                "netIncomeToCommon",
+              ].includes(metric)
+            ) {
               fetchedMetrics[symbol][metric] = formatLargeNumber(value);
             } else if (
-              ["dividendYield", "profitMargins", "operatingMargins", "grossMargins", "returnOnEquity", "earningsGrowth", "revenueGrowth", "52WeekChange", "SandP52WeekChange"].includes(metric)
+              [
+                "dividendYield",
+                "profitMargins",
+                "operatingMargins",
+                "grossMargins",
+                "returnOnEquity",
+                "earningsGrowth",
+                "revenueGrowth",
+                "52WeekChange",
+                "SandP52WeekChange",
+              ].includes(metric)
             ) {
               fetchedMetrics[symbol][metric] = formatPercentage(value);
             } else {
@@ -414,10 +442,16 @@ export default function EnhancedStockSearch() {
                   transition={{ duration: 0.5 }}
                   className="w-full mt-8 mb-4"
                 >
-                  <h2 className="text-xl font-semibold text-gray-800 dark:text-gray-200 mb-2">AI Analysis Approach</h2>
-                  <p className="text-sm text-gray-600 dark:text-gray-300">
-                    {aiAnalysisDescription}
-                  </p>
+                  <Card toggleable defaultOpen={false}>
+                    <CardHeader>
+                      <CardTitle className="text-lg">Analysis Approach</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <p className="text-sm text-gray-600 dark:text-gray-300">
+                        {aiAnalysisDescription}
+                      </p>
+                    </CardContent>
+                  </Card>
                 </motion.div>
               )}
 
@@ -456,18 +490,10 @@ export default function EnhancedStockSearch() {
                   transition={{ duration: 0.5 }}
                   className="w-full mt-8"
                 >
-                  <Card className="min-w-[300px] w-full relative">
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="absolute top-2 right-2"
-                      onClick={() => setMetrics({})}
-                    >
-                      <X className="h-4 w-4" />
-                    </Button>
+                  <Card toggleable defaultOpen>
                     <CardHeader>
-                      <CardTitle className="flex items-center">
-                        <TrendingUp className="mr-2 h-6 w-6 text-blue-500" />
+                      <CardTitle className="text-lg flex items-center">
+                        <TrendingUp className="mr-2 h-5 w-5 text-blue-500" />
                         Financial Metrics
                       </CardTitle>
                     </CardHeader>
@@ -523,16 +549,16 @@ export default function EnhancedStockSearch() {
                   transition={{ duration: 0.5 }}
                   className="w-full mt-8"
                 >
-                  <Card className="min-w-[300px] w-full">
+                  <Card toggleable defaultOpen>
                     <CardHeader>
-                      <CardTitle className="flex items-center">
-                        <ExternalLink className="mr-2 h-6 w-6 text-blue-500" />
+                      <CardTitle className="text-lg flex items-center">
+                        <ExternalLink className="mr-2 h-5 w-5 text-blue-500" />
                         Latest News
                       </CardTitle>
                     </CardHeader>
                     <CardContent>
                       <ul className="space-y-4">
-                        {newsData.map((item, index) => (
+                        {newsData.map((item) => (
                           <li key={item.uuid}>
                             <a
                               href={item.link}
@@ -548,9 +574,14 @@ export default function EnhancedStockSearch() {
                                 />
                               )}
                               <div className="flex-grow">
-                                <h3 className="font-semibold text-sm mb-1">{item.title}</h3>
+                                <h3 className="font-semibold text-sm mb-1">
+                                  {item.title}
+                                </h3>
                                 <p className="text-xs text-gray-500 dark:text-gray-400">
-                                  {item.publisher} - {new Date(item.providerPublishTime * 1000).toLocaleDateString()}
+                                  {item.publisher} -{" "}
+                                  {new Date(
+                                    item.providerPublishTime * 1000
+                                  ).toLocaleDateString()}
                                 </p>
                               </div>
                             </a>

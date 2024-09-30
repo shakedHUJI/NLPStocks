@@ -16,10 +16,16 @@ function AIQueryProcessor({ onQueryProcessed }) {
       const result = response.data;
       console.log("Parsed AI result:", result);
 
+      if (!result || !result.actions) {
+        throw new Error("Invalid response from server");
+      }
+
       onQueryProcessed(result);
+      return result; // Make sure to return the result
     } catch (err) {
       console.error("Error processing query:", err);
       setError("Failed to process query. Please check the console for more details.");
+      throw err; // Re-throw the error so it can be caught in handleSubmit
     } finally {
       setLoading(false);
     }

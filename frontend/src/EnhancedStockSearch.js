@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import { ThemeProvider } from "next-themes";
-import { Search, Moon, Sun, TrendingUp, X } from "lucide-react";
+import { Search, Moon, Sun, TrendingUp, X, ExternalLink } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import AIQueryProcessor from "./AIQueryProcessor";
 import axios from "axios";
@@ -65,6 +65,7 @@ export default function EnhancedStockSearch() {
   });
   const [originalStockData, setOriginalStockData] = useState([]);
   const [metrics, setMetrics] = useState({});
+  const [newsData, setNewsData] = useState([]);
 
   const { theme, setTheme } = useTheme();
 
@@ -79,13 +80,52 @@ export default function EnhancedStockSearch() {
     setError(null);
     setLoadingState("Analyzing your search");
     setMetrics({});
+    setNewsData([]); // Clear previous news data
 
     try {
-      await processQuery(query);
+      const result = await processQuery(query);
+      console.log("AI Query result:", result);
+
+      if (result && result.actions) {
+        const newsAction = result.actions.find(action => action.type === 'getNews');
+        if (newsAction && newsAction.symbols && newsAction.symbols.length > 0) {
+          setLoadingState("Fetching news data");
+          await fetchNewsData(newsAction.symbols[0]);
+        }
+
+        // Handle other actions (compare, getMetrics, etc.)
+        const compareAction = result.actions.find(
+          (action) => action.type === "compare" || action.type === "getHistory"
+        );
+        const metricsAction = result.actions.find(
+          (action) => action.type === "getMetrics"
+        );
+
+        if (compareAction) {
+          setStockSymbols(compareAction.symbols);
+          setCompareMode(compareAction.type === "compare");
+          fetchStockData(
+            compareAction.symbols,
+            compareAction.startDate,
+            compareAction.endDate
+          );
+        }
+
+        if (metricsAction) {
+          fetchMetrics(metricsAction.symbols, metricsAction.metrics);
+        }
+
+        setDescription(result.description || "");
+        setKeyDates(result.keyDates || []);
+      } else {
+        throw new Error("Invalid response from AI query processor");
+      }
     } catch (err) {
-      setError("Failed to process query. Please try again.");
+      console.error("Error processing query:", err);
+      setError(`Failed to process query: ${err.message}`);
     } finally {
       setLoading(false);
+      setLoadingState("");
     }
   };
 
@@ -230,6 +270,20 @@ export default function EnhancedStockSearch() {
   const handleDoubleClick = (event) => {
     event.preventDefault(); // Prevent default double-click behavior
     handleZoomOut();
+  };
+
+  const fetchNewsData = async (symbol) => {
+    console.log(`Fetching news data for symbol: ${symbol}`);
+    try {
+      const response = await axios.get(`${API_URL}/api/stock_news`, {
+        params: { symbol },
+      });
+      console.log("News data received:", response.data);
+      setNewsData(response.data);
+    } catch (err) {
+      console.error("Error fetching news data:", err);
+      setError(`Failed to fetch news data: ${err.message}`);
+    }
   };
 
   const { processQuery, error: aiError } = AIQueryProcessor({
@@ -443,6 +497,58 @@ export default function EnhancedStockSearch() {
                             </motion.div>
                           )
                         )}
+                      </div>
+                    </CardContent>
+                  </Card>
+                </motion.div>
+              )}
+
+              {newsData.length > 0 && (
+                <motion.div
+                  key="news"
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: 20 }}
+                  transition={{ duration: 0.5 }}
+                  className="w-full mt-8"
+                >
+                  <Card className="min-w-[300px] w-full">
+                    <CardHeader>
+                      <CardTitle className="flex items-center">
+                        <ExternalLink className="mr-2 h-6 w-6 text-blue-500" />
+                        Latest News
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                        {newsData.map((item, index) => (
+                          <a
+                            key={item.uuid}
+                            href={item.link}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="block hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors duration-200"
+                          >
+                            <div className="p-4 h-full flex flex-col">
+                              {item.thumbnail && item.thumbnail.resolutions && (
+                                <img
+                                  src={item.thumbnail.resolutions[0].url}
+                                  alt={item.title}
+                                  className="w-full h-32 object-cover rounded-lg mb-2"
+                                />
+                              )}
+                              <h3 className="font-semibold text-sm mb-1 flex-grow">
+                                {item.title}
+                              </h3>
+                              <p className="text-xs text-gray-500 dark:text-gray-400">
+                                {item.publisher} -{" "}
+                                {new Date(
+                                  item.providerPublishTime * 1000
+                                ).toLocaleDateString()}
+                              </p>
+                            </div>
+                          </a>
+                        ))}
                       </div>
                     </CardContent>
                   </Card>

@@ -128,5 +128,21 @@ def process_query():
         app.logger.error(f"Error processing query: {str(e)}")
         return jsonify({"error": "Failed to process query"}), 500
 
+@app.route('/api/stock_news', methods=['GET'])
+def get_stock_news():
+    symbol = request.args.get('symbol')
+    app.logger.info(f"Received news request for symbol: {symbol}")
+    if not symbol:
+        return jsonify({"error": "No symbol provided"}), 400
+
+    try:
+        stock = yf.Ticker(symbol)
+        news = stock.news
+        app.logger.info(f"Fetched {len(news)} news items for {symbol}")
+        return jsonify(news[:8])  # Return the first 8 news items
+    except Exception as e:
+        app.logger.error(f"Error fetching news for {symbol}: {str(e)}")
+        return jsonify({"error": f"Failed to fetch news data: {str(e)}"}), 500
+
 if __name__ == '__main__':
     app.run(debug=True)

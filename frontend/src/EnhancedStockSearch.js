@@ -37,8 +37,7 @@ import {
 } from "./utils/formatters";
 import StockGraph from "./UI/StockGraph.tsx";
 
-const API_URL = process.env.REACT_APP_API_URL || "http://localhost:5000";
-console.log("API_URL:", API_URL);
+import { API_BASE_URL } from './config';
 
 const lineColors = [
   "#3b82f6",
@@ -136,9 +135,9 @@ export default function EnhancedStockSearch() {
 
   const fetchStockData = async (symbols, start, end) => {
     console.log("Fetching stock data with params:", { symbols, start, end });
-    console.log("API_URL:", API_URL);
+    console.log("API_BASE_URL:", API_BASE_URL);
     try {
-      const url = `${API_URL}/api/stock_data`;
+      const url = `${API_BASE_URL}/stock_data`;
       console.log("Full API URL:", url);
       const response = await axios.get(url, {
         params: {
@@ -234,7 +233,7 @@ export default function EnhancedStockSearch() {
 
   const fetchMetrics = async (symbols, requestedMetrics) => {
     try {
-      const response = await axios.get(`${API_URL}/api/stock_metrics`, {
+      const response = await axios.get(`${API_BASE_URL}/api/stock_metrics`, {
         params: {
           symbols: symbols.join(","),
           metrics: requestedMetrics.join(","),
@@ -298,7 +297,7 @@ export default function EnhancedStockSearch() {
   const fetchNewsData = async (symbol) => {
     console.log(`Fetching news data for symbol: ${symbol}`);
     try {
-      const response = await axios.get(`${API_URL}/api/stock_news`, {
+      const response = await axios.get(`${API_BASE_URL}/api/stock_news`, {
         params: { symbol },
       });
       console.log("News data received:", response.data);

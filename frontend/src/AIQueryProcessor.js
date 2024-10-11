@@ -1,8 +1,6 @@
 import { useState } from "react";
 import axios from "axios";
-
-// const API_URL = process.env.REACT_APP_API_URL || "https://your-render-app-url.onrender.com";
-const API_URL = "http://localhost:5000";
+import { API_BASE_URL } from './config';
 
 function AIQueryProcessor({ onQueryProcessed }) {
   const [loading, setLoading] = useState(false);
@@ -13,7 +11,7 @@ function AIQueryProcessor({ onQueryProcessed }) {
     setError(null);
 
     try {
-      const response = await axios.post(`${API_URL}/api/process_query`, {
+      const response = await axios.post(`${API_BASE_URL}/api/process_query`, {
         query,
       });
       const result = response.data;

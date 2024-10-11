@@ -1,7 +1,9 @@
 import { useState } from "react";
 import axios from "axios";
 
-const API_URL = process.env.REACT_APP_API_URL || "http://localhost:5000";
+const API_URL =
+  process.env.REACT_APP_API_URL || "https://your-render-app-url.onrender.com";
+// const API_URL = "http://192.168.1.246:5000";
 
 function AIQueryProcessor({ onQueryProcessed }) {
   const [loading, setLoading] = useState(false);
@@ -12,7 +14,9 @@ function AIQueryProcessor({ onQueryProcessed }) {
     setError(null);
 
     try {
-      const response = await axios.post(`${API_URL}/api/process_query`, { query });
+      const response = await axios.post(`${API_URL}/api/process_query`, {
+        query,
+      });
       const result = response.data;
       console.log("Parsed AI result:", result);
 
@@ -24,7 +28,9 @@ function AIQueryProcessor({ onQueryProcessed }) {
       return result; // Make sure to return the result
     } catch (err) {
       console.error("Error processing query:", err);
-      setError("Failed to process query. Please check the console for more details.");
+      setError(
+        "Failed to process query. Please check the console for more details."
+      );
       throw err; // Re-throw the error so it can be caught in handleSubmit
     } finally {
       setLoading(false);

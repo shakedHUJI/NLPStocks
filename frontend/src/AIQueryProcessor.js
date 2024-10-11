@@ -1,9 +1,8 @@
 import { useState } from "react";
 import axios from "axios";
 
-const API_URL =
-  process.env.REACT_APP_API_URL || "https://your-render-app-url.onrender.com";
-// const API_URL = "http://192.168.1.246:5000";
+// const API_URL = process.env.REACT_APP_API_URL || "https://your-render-app-url.onrender.com";
+const API_URL = "http://localhost:5000";
 
 function AIQueryProcessor({ onQueryProcessed }) {
   const [loading, setLoading] = useState(false);

@@ -444,7 +444,9 @@ export default function EnhancedStockSearch() {
                 >
                   <Card toggleable defaultOpen={false}>
                     <CardHeader>
-                      <CardTitle className="text-lg">Analysis Approach</CardTitle>
+                      <CardTitle className="text-lg">
+                        Analysis Approach
+                      </CardTitle>
                     </CardHeader>
                     <CardContent>
                       <p className="text-sm text-gray-600 dark:text-gray-300">

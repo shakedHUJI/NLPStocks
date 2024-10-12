@@ -14,7 +14,7 @@ NLP Stock Insights is an innovative web application that allows users to analyze
 ## Technologies Used
 
 - Frontend: React, TypeScript, Tailwind CSS
-- Backend: Flask, Python
+- Backend: FastAPI, Python
 - AI Integration: OpenAI GPT
 - Stock Data: yfinance
 - Charting: Recharts
@@ -49,7 +49,7 @@ To learn more about the technologies used in this project:
 - [React Documentation](https://reactjs.org/)
 - [TypeScript Documentation](https://www.typescriptlang.org/)
 - [Tailwind CSS Documentation](https://tailwindcss.com/)
-- [Flask Documentation](https://flask.palletsprojects.com/)
+- [FastAPI Documentation](https://fastapi.tiangolo.com/)
 - [OpenAI API Documentation](https://beta.openai.com/docs/)
 
 ## Contributing

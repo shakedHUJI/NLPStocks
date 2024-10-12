@@ -37,7 +37,7 @@ import {
 } from "./utils/formatters";
 import StockGraph from "./UI/StockGraph.tsx";
 
-import { API_BASE_URL } from './config';
+import { API_BASE_URL } from "./config";
 
 const lineColors = [
   "#3b82f6",
@@ -137,7 +137,7 @@ export default function EnhancedStockSearch() {
     console.log("Fetching stock data with params:", { symbols, start, end });
     console.log("API_BASE_URL:", API_BASE_URL);
     try {
-      const url = `${API_BASE_URL}/stock_data`;
+      const url = `${API_BASE_URL}/api/stock_data`;
       console.log("Full API URL:", url);
       const response = await axios.get(url, {
         params: {

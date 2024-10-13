@@ -1,14 +1,23 @@
 import React from "react";
-import { parseISO, isWithinInterval, subDays, addDays } from "date-fns";
+import { parseISO, isWithinInterval, subDays, addDays, differenceInDays } from "date-fns";
 
-const CustomTooltip = ({ active, payload, label, keyDates, colors }) => {
+const CustomTooltip = ({ active, payload, label, keyDates, colors, stockData }) => {
   if (active && payload && payload.length) {
     const currentDate = parseISO(label);
+    
+    // Calculate the total date range of the graph
+    const startDate = parseISO(stockData[0].date);
+    const endDate = parseISO(stockData[stockData.length - 1].date);
+    const totalDays = differenceInDays(endDate, startDate);
+    
+    // Calculate the number of days that represent 2% of the total range
+    const daysBuffer = Math.ceil(totalDays * 0.02);
+
     const relevantKeyDates = keyDates.filter((keyDate) => {
       const keyDateParsed = parseISO(keyDate.date);
       return isWithinInterval(currentDate, {
-        start: subDays(keyDateParsed, 3),
-        end: addDays(keyDateParsed, 3),
+        start: subDays(keyDateParsed, daysBuffer),
+        end: addDays(keyDateParsed, daysBuffer),
       });
     });
 

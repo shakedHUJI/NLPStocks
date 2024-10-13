@@ -149,6 +149,7 @@ const StockGraph: React.FC<StockGraphProps> = ({
                     label={label}
                     keyDates={keyDates}
                     colors={colorMap}
+                    stockData={stockData}
                   />
                 )}
               />

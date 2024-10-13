@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { ThemeProvider } from "next-themes";
 import {
   Search,
@@ -76,15 +76,33 @@ export default function EnhancedStockSearch() {
   const [newsData, setNewsData] = useState([]);
   const [aiAnalysisDescription, setAiAnalysisDescription] = useState("");
   const [showAIAnalysis, setShowAIAnalysis] = useState(false);
+  const [hasSearched, setHasSearched] = useState(false);
 
   const { theme, setTheme } = useTheme();
+
+  // Example prompts
+  const examplePrompts = [
+    "How did apple's stock reacted to all iphone releases?",
+    "Show me the latest news for Tesla",
+    "Compare Apple and Microsoft stock performance over the last year",
+    "What are the key financial metrics for Amazon?",
+  ];
 
   useEffect(() => {
     console.log("Current metrics state:", metrics);
   }, [metrics]);
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+  const handleSubmit = async (e, promptQuery = null) => {
+    if (e) e.preventDefault();
+    
+    const searchQuery = promptQuery || query;
+    if (!searchQuery.trim()) {
+      setError("Please enter a query");
+      return;
+    }
+
+    setQuery(searchQuery); // Update the input field
+    setHasSearched(true);
     setShowGraph(false);
     setLoading(true);
     setError(null);
@@ -94,7 +112,7 @@ export default function EnhancedStockSearch() {
     setAiAnalysisDescription("");
 
     try {
-      const result = await processQuery(query);
+      const result = await processQuery(searchQuery);
       console.log("AI Query result:", result);
 
       if (result && result.actions) {
@@ -338,6 +356,10 @@ export default function EnhancedStockSearch() {
     },
   });
 
+  const handleExamplePrompt = (prompt) => {
+    handleSubmit(null, prompt);
+  };
+
   return (
     <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
       <TooltipProvider>
@@ -405,6 +427,28 @@ export default function EnhancedStockSearch() {
                 </Button>
               </div>
             </form>
+
+            {!hasSearched && (
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, delay: 0.2 }}
+                className="mb-8"
+              >
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {examplePrompts.map((prompt, index) => (
+                    <Button
+                      key={index}
+                      onClick={() => handleExamplePrompt(prompt)}
+                      variant="outline"
+                      className="text-center py-6 px-1 m-.5"
+                    >
+                      {prompt}
+                    </Button>
+                  ))}
+                </div>
+              </motion.div>
+            )}
 
             <AnimatePresence>
               {loadingState && (

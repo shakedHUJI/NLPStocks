@@ -20,7 +20,9 @@ jobs:
       - name: Run tests
         env:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
-        run: pytest backend/
+        run: |
+          echo "OPENAI_API_KEY is set: ${{ secrets.OPENAI_API_KEY != '' }}"  # checks if the env variable is set, prints boolean value
+          pytest backend/
 
   deploy:
     needs: test
@@ -30,6 +32,8 @@ jobs:
       - uses: superfly/flyctl-actions/setup-flyctl@master
       - name: Deploy to Fly.io
         working-directory: backend
-        run: flyctl deploy --remote-only
         env:
           FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
+        run: |
+          echo "FLY_API_TOKEN is set: ${{ secrets.FLY_API_TOKEN != '' }}" 
+          flyctl deploy --remote-only

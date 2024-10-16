@@ -26,6 +26,7 @@ yarn-error.log*
 # Python
 *.pyc
 __pycache__/
+*.pytest_cache
 
 # IDEs and editors
 .vscode/
@@ -35,6 +36,5 @@ __pycache__/
 
 # Backend
 /backend/.env
-
 # Frontend
 /frontend/.env

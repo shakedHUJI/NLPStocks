@@ -2,7 +2,6 @@ from fastapi import FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 import yfinance as yf
-import pandas as pd
 import logging
 from datetime import datetime
 import os
@@ -46,9 +45,12 @@ async def get_stock_data(symbols: str = Query(...), start_date: str = Query(...)
         try:
             stock = yf.Ticker(symbol)
             hist = stock.history(start=start_date, end=end_date)
-            data[symbol] = hist['Close'].to_dict()
-            # Convert dates to string format
-            data[symbol] = {date.strftime('%Y-%m-%d'): price for date, price in data[symbol].items()}
+            if hist.empty:
+                data[symbol] = {"error": "No data available for this symbol"}
+            else:
+                data[symbol] = hist['Close'].to_dict()
+                # Convert dates to string format
+                data[symbol] = {date.strftime('%Y-%m-%d'): price for date, price in data[symbol].items()}
             logging.info(f"Successfully fetched data for {symbol}: {len(data[symbol])} data points")
         except Exception as e:
             logging.error(f"Error fetching data for {symbol}: {str(e)}")

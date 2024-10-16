@@ -1,22 +1,10 @@
 "use client";
 
-import React, { useState, useEffect, useRef } from "react";
+import React from "react";
 import { ThemeProvider } from "next-themes";
-import {
-  Search,
-  Moon,
-  Sun,
-  TrendingUp,
-  X,
-  ExternalLink,
-  ChevronDown,
-  ChevronUp,
-} from "lucide-react";
+import { Search, Moon, Sun, TrendingUp, X, ExternalLink } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-import AIQueryProcessor from "./AIQueryProcessor";
-import axios from "axios";
 import { useTheme } from "next-themes";
-import { parseISO, isAfter, isBefore } from "date-fns";
 
 import { Button } from "./UI/button.tsx";
 import { Input } from "./UI/input.tsx";
@@ -30,173 +18,38 @@ import {
 
 import "./EnhancedStockSearch.css";
 import LoadingDots from "./components/LoadingDots";
-import {
-  formatLargeNumber,
-  formatPercentage,
-  formatNumber,
-} from "./utils/formatters";
 import StockGraph from "./UI/StockGraph.tsx";
-
-import { API_BASE_URL } from "./config";
-
-const lineColors = [
-  "#3b82f6",
-  "#10b981",
-  "#f59e0b",
-  "#ef4444",
-  "#8b5cf6",
-  "#ec4899",
-  "#14b8a6",
-  "#f97316",
-  "#6366f1",
-  "#84cc16",
-];
+import { useStockSearch } from "./hooks/useStockSearch";
+import { EXAMPLE_PROMPTS } from "./constants";
 
 export default function EnhancedStockSearch() {
-  const [query, setQuery] = useState("");
-  const [showGraph, setShowGraph] = useState(false);
-  const [stockData, setStockData] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
-  const [description, setDescription] = useState("");
-  const [keyDates, setKeyDates] = useState([]);
-  const [loadingState, setLoadingState] = useState("");
-  const [stockSymbols, setStockSymbols] = useState([]);
-  const [compareMode, setCompareMode] = useState(false);
-  const [colorMap, setColorMap] = useState({});
-  const [zoomState, setZoomState] = useState({
-    refAreaLeft: "",
-    refAreaRight: "",
-    left: "dataMin",
-    right: "dataMax",
-    animation: true,
-  });
-  const [originalStockData, setOriginalStockData] = useState([]);
-  const [metrics, setMetrics] = useState({});
-  const [newsData, setNewsData] = useState([]);
-  const [aiAnalysisDescription, setAiAnalysisDescription] = useState("");
-  const [showAIAnalysis, setShowAIAnalysis] = useState(false);
-  const [hasSearched, setHasSearched] = useState(false);
+  const {
+    query,
+    setQuery,
+    handleSubmit,
+    loading,
+    loadingState,
+    error,
+    aiError,
+    showGraph,
+    stockData,
+    stockSymbols,
+    colorMap,
+    description,
+    keyDates,
+    compareMode,
+    zoomState,
+    setZoomState,
+    handleZoom,
+    handleZoomOut,
+    metrics,
+    newsData,
+    aiAnalysisDescription,
+    hasSearched,
+    setShowGraph,
+  } = useStockSearch();
 
   const { theme, setTheme } = useTheme();
-
-  // Example prompts
-  const examplePrompts = [
-    "How did apple's stock reacted to all iphone releases?",
-    "Show me the latest news for Tesla",
-    "Compare Apple and Microsoft stock performance over the last year",
-    "What are the key financial metrics for Amazon?",
-  ];
-
-  useEffect(() => {
-    console.log("Current metrics state:", metrics);
-  }, [metrics]);
-
-  const handleSubmit = async (e, promptQuery = null) => {
-    if (e) e.preventDefault();
-    
-    const searchQuery = promptQuery || query;
-    if (!searchQuery.trim()) {
-      setError("Please enter a query");
-      return;
-    }
-
-    setQuery(searchQuery); // Update the input field
-    setHasSearched(true);
-    setShowGraph(false);
-    setLoading(true);
-    setError(null);
-    setLoadingState("Analyzing your search");
-    setMetrics({});
-    setNewsData([]);
-    setAiAnalysisDescription("");
-
-    try {
-      const result = await processQuery(searchQuery);
-      console.log("AI Query result:", result);
-
-      if (result && result.actions) {
-        setAiAnalysisDescription(result.description || "");
-
-        for (const action of result.actions) {
-          switch (action.type) {
-            case "getNews":
-              setLoadingState("Fetching news data");
-              await fetchNewsData(action.symbols[0]);
-              break;
-            case "compare":
-            case "getHistory":
-              setStockSymbols(action.symbols);
-              setCompareMode(action.type === "compare");
-              fetchStockData(action.symbols, action.startDate, action.endDate);
-              break;
-            case "getMetrics":
-              fetchMetrics(action.symbols, action.metrics);
-              break;
-            // Add more cases for other action types if needed
-          }
-        }
-
-        setDescription(result.description || "");
-        setKeyDates(result.keyDates || []);
-      } else {
-        throw new Error("Invalid response from AI query processor");
-      }
-    } catch (err) {
-      console.error("Error processing query:", err);
-      setError(`Failed to process query: ${err.message}`);
-    } finally {
-      setLoading(false);
-      setLoadingState("");
-    }
-  };
-
-  const fetchStockData = async (symbols, start, end) => {
-    console.log("Fetching stock data with params:", { symbols, start, end });
-    console.log("API_BASE_URL:", API_BASE_URL);
-    try {
-      const url = `${API_BASE_URL}/api/stock_data`;
-      console.log("Full API URL:", url);
-      const response = await axios.get(url, {
-        params: {
-          symbols: symbols.join(","),
-          start_date: start,
-          end_date: end,
-        },
-      });
-
-      console.log("API Response:", response.data);
-
-      const stockData = response.data;
-
-      const mergedData = Object.keys(stockData[symbols[0]]).map((date) => {
-        const dataPoint = { date };
-        symbols.forEach((symbol) => {
-          dataPoint[symbol] = stockData[symbol][date];
-        });
-        return dataPoint;
-      });
-
-      setStockData(mergedData);
-      setOriginalStockData(mergedData);
-      setShowGraph(true);
-      setLoadingState("");
-
-      const newColorMap = symbols.reduce((acc, symbol, index) => {
-        acc[symbol] = lineColors[index % lineColors.length];
-        return acc;
-      }, {});
-      setColorMap(newColorMap);
-    } catch (err) {
-      console.error("Error fetching stock data:", err);
-      console.error(
-        "Error details:",
-        err.response ? err.response.data : err.message
-      );
-      setError("Failed to fetch stock data. Please try again.");
-      setLoadingState("");
-    }
-  };
 
   const toggleTheme = () => {
     setTheme(theme === "dark" ? "light" : "dark");
@@ -206,158 +59,13 @@ export default function EnhancedStockSearch() {
     setQuery("");
   };
 
-  const handleZoom = () => {
-    let { refAreaLeft, refAreaRight } = zoomState;
-
-    if (refAreaLeft === refAreaRight || refAreaRight === "") {
-      setZoomState((prev) => ({
-        ...prev,
-        refAreaLeft: "",
-        refAreaRight: "",
-      }));
-      return;
-    }
-
-    if (isAfter(parseISO(refAreaLeft), parseISO(refAreaRight))) {
-      [refAreaLeft, refAreaRight] = [refAreaRight, refAreaLeft];
-    }
-
-    const filteredData = originalStockData.filter(
-      (d) =>
-        !isBefore(parseISO(d.date), parseISO(refAreaLeft)) &&
-        !isAfter(parseISO(d.date), parseISO(refAreaRight))
-    );
-
-    setStockData(filteredData);
-    setZoomState((prev) => ({
-      ...prev,
-      refAreaLeft: "",
-      refAreaRight: "",
-      left: refAreaLeft,
-      right: refAreaRight,
-    }));
-  };
-
-  const handleZoomOut = () => {
-    setStockData(originalStockData);
-    setZoomState({
-      refAreaLeft: "",
-      refAreaRight: "",
-      left: "dataMin",
-      right: "dataMax",
-      animation: true,
-    });
-  };
-
-  const fetchMetrics = async (symbols, requestedMetrics) => {
-    try {
-      const response = await axios.get(`${API_BASE_URL}/api/stock_metrics`, {
-        params: {
-          symbols: symbols.join(","),
-          metrics: requestedMetrics.join(","),
-        },
-      });
-
-      const fetchedMetrics = response.data;
-
-      // Format the metrics as needed
-      Object.keys(fetchedMetrics).forEach((symbol) => {
-        Object.keys(fetchedMetrics[symbol]).forEach((metric) => {
-          const value = fetchedMetrics[symbol][metric];
-          if (typeof value === "number") {
-            if (
-              [
-                "marketCap",
-                "totalCash",
-                "freeCashflow",
-                "operatingCashflow",
-                "netIncomeToCommon",
-              ].includes(metric)
-            ) {
-              fetchedMetrics[symbol][metric] = formatLargeNumber(value);
-            } else if (
-              [
-                "dividendYield",
-                "profitMargins",
-                "operatingMargins",
-                "grossMargins",
-                "returnOnEquity",
-                "earningsGrowth",
-                "revenueGrowth",
-                "52WeekChange",
-                "SandP52WeekChange",
-              ].includes(metric)
-            ) {
-              fetchedMetrics[symbol][metric] = formatPercentage(value);
-            } else {
-              fetchedMetrics[symbol][metric] = formatNumber(value);
-            }
-          }
-        });
-      });
-
-      setMetrics(fetchedMetrics);
-      setLoadingState("");
-    } catch (err) {
-      console.error("Error fetching metrics:", err);
-      setError(
-        `Failed to fetch metrics. Please check the console for more details.`
-      );
-      setLoadingState("");
-    }
+  const handleExamplePrompt = (prompt) => {
+    handleSubmit(null, prompt);
   };
 
   const handleDoubleClick = (event) => {
-    event.preventDefault(); // Prevent default double-click behavior
+    event.preventDefault();
     handleZoomOut();
-  };
-
-  const fetchNewsData = async (symbol) => {
-    console.log(`Fetching news data for symbol: ${symbol}`);
-    try {
-      const response = await axios.get(`${API_BASE_URL}/api/stock_news`, {
-        params: { symbol },
-      });
-      console.log("News data received:", response.data);
-      setNewsData(response.data);
-    } catch (err) {
-      console.error("Error fetching news data:", err);
-      setError(`Failed to fetch news data: ${err.message}`);
-    }
-  };
-
-  const { processQuery, error: aiError } = AIQueryProcessor({
-    onQueryProcessed: (result) => {
-      console.log("AI Query result:", result);
-      setDescription(result.description);
-      setKeyDates(result.keyDates);
-      setLoadingState(`Fetching ${result.description}`);
-
-      const compareAction = result.actions.find(
-        (action) => action.type === "compare" || action.type === "getHistory"
-      );
-      const metricsAction = result.actions.find(
-        (action) => action.type === "getMetrics"
-      );
-
-      if (compareAction) {
-        setStockSymbols(compareAction.symbols);
-        setCompareMode(compareAction.type === "compare");
-        fetchStockData(
-          compareAction.symbols,
-          compareAction.startDate,
-          compareAction.endDate
-        );
-      }
-
-      if (metricsAction) {
-        fetchMetrics(metricsAction.symbols, metricsAction.metrics);
-      }
-    },
-  });
-
-  const handleExamplePrompt = (prompt) => {
-    handleSubmit(null, prompt);
   };
 
   return (
@@ -370,6 +78,7 @@ export default function EnhancedStockSearch() {
             transition={{ duration: 0.5 }}
             className="max-w-full sm:max-w-4xl mx-auto"
           >
+            {/* Header */}
             <div className="flex flex-col sm:flex-row justify-between items-center mb-8">
               <motion.h1
                 initial={{ x: -20 }}
@@ -398,6 +107,8 @@ export default function EnhancedStockSearch() {
                 </Tooltip>
               </TooltipProvider>
             </div>
+
+            {/* Search form */}
             <form onSubmit={handleSubmit} className="mb-8">
               <div className="flex flex-col sm:flex-row gap-4">
                 <div className="relative flex-grow">
@@ -428,6 +139,7 @@ export default function EnhancedStockSearch() {
               </div>
             </form>
 
+            {/* Example prompts */}
             {!hasSearched && (
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
@@ -436,7 +148,7 @@ export default function EnhancedStockSearch() {
                 className="mb-8"
               >
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  {examplePrompts.map((prompt, index) => (
+                  {EXAMPLE_PROMPTS.map((prompt, index) => (
                     <Button
                       key={index}
                       onClick={() => handleExamplePrompt(prompt)}
@@ -451,6 +163,7 @@ export default function EnhancedStockSearch() {
             )}
 
             <AnimatePresence>
+              {/* Loading state */}
               {loadingState && (
                 <motion.p
                   initial={{ opacity: 0, y: -10 }}
@@ -464,6 +177,7 @@ export default function EnhancedStockSearch() {
                 </motion.p>
               )}
 
+              {/* Error messages */}
               {(error || aiError) && (
                 <motion.p
                   initial={{ opacity: 0, y: -10 }}
@@ -476,6 +190,7 @@ export default function EnhancedStockSearch() {
                 </motion.p>
               )}
 
+              {/* AI Analysis */}
               {aiAnalysisDescription && (
                 <motion.div
                   key="ai-analysis"
@@ -500,6 +215,7 @@ export default function EnhancedStockSearch() {
                 </motion.div>
               )}
 
+              {/* Stock Graph */}
               {showGraph && (
                 <motion.div
                   key="graph"
@@ -526,6 +242,7 @@ export default function EnhancedStockSearch() {
                 </motion.div>
               )}
 
+              {/* Financial Metrics */}
               {Object.keys(metrics).length > 0 && (
                 <motion.div
                   key="metrics"
@@ -585,6 +302,7 @@ export default function EnhancedStockSearch() {
                 </motion.div>
               )}
 
+              {/* News Data */}
               {newsData.length > 0 && (
                 <motion.div
                   key="news"

@@ -9,7 +9,6 @@ import os
 from openai import OpenAI
 import json
 from dotenv import load_dotenv
-from typing import List, Dict, Union
 import traceback
 
 # Load environment variables from .env file
@@ -20,7 +19,7 @@ app = FastAPI()
 # Add CORS middleware
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000", "https://stockchat.co", "https://www.stockchat.co"],  # Add your frontend URL
+    allow_origins=["https://stockchat.co", "https://www.stockchat.co", "http://localhost:3000"], # TBD: remove localhost 
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

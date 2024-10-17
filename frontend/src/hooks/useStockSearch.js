@@ -75,7 +75,7 @@ const useStockSearch = () => {
               handleFetchMetrics(action.symbols, action.metrics);
               break;
             default:
-              throw new Error(`Unsupported action type: ${action.type}`);
+              console.error(`Unsupported action type: ${action.type}`);
           }
         }
 

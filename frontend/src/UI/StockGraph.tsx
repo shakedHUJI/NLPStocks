@@ -98,7 +98,8 @@ const StockGraph: React.FC<StockGraphProps> = ({
     }));
   };
 
-  const toggleMode = () => {
+  const toggleMode = (e: React.MouseEvent) => {
+    e.preventDefault(); // Prevent the default right-click menu
     setMode((prevMode) => {
       switch (prevMode) {
         case "zoom":
@@ -125,6 +126,7 @@ const StockGraph: React.FC<StockGraphProps> = ({
         <div
           className="w-full h-[400px] select-none"
           onDoubleClick={handleDoubleClick}
+          onContextMenu={toggleMode} // Add this line to handle right-click
           ref={chartRef}
         >
           <ResponsiveContainer width="100%" height="100%">

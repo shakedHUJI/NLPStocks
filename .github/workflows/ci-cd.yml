@@ -55,19 +55,6 @@ jobs:
     needs: deploy
     runs-on: ubuntu-latest
     steps:
-      - name: Download test results
-        uses: actions/download-artifact@v4
-        with:
-          name: test-results
-      - name: Prepare test summary
-        id: test_summary
-        run: |
-          echo "API_TESTS<<EOF" >> $GITHUB_OUTPUT
-          tail -n 3 api_test_results.txt >> $GITHUB_OUTPUT
-          echo "EOF" >> $GITHUB_OUTPUT
-          echo "PROMPT_TESTS<<EOF" >> $GITHUB_OUTPUT
-          tail -n 3 prompt_test_results.txt >> $GITHUB_OUTPUT
-          echo "EOF" >> $GITHUB_OUTPUT
       - name: Send Slack Notification
         uses: 8398a7/action-slack@v3
         with:
@@ -91,13 +78,7 @@ jobs:
             *Workflow:* ${{ github.workflow }}
             *Run ID:* ${{ github.run_id }}
 
-            *Test Results Summary:*
-            API Tests (last 5 lines):            ```
-            ${{ steps.test_summary.outputs.API_TESTS }}            ```
-            Prompt Tests (last 5 lines):            ```
-            ${{ steps.test_summary.outputs.PROMPT_TESTS }}            ```
-
-            *Full Test Results:*
+            *Test Results:*
             [Download Test Results](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})
             (Go to the "Artifacts" section and download the "test-results" artifact)
 

@@ -55,6 +55,19 @@ jobs:
     needs: deploy
     runs-on: ubuntu-latest
     steps:
+      - name: Download test results
+        uses: actions/download-artifact@v4
+        with:
+          name: test-results
+      - name: Prepare test summary
+        id: test_summary
+        run: |
+          echo "API_TESTS<<EOF" >> $GITHUB_OUTPUT
+          tail -n 3 api_test_results.txt >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+          echo "PROMPT_TESTS<<EOF" >> $GITHUB_OUTPUT
+          tail -n 3 prompt_test_results.txt >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
       - name: Send Slack Notification
         uses: 8398a7/action-slack@v3
         with:
@@ -64,24 +77,30 @@ jobs:
           if_mention: failure,cancelled
           job_name: ${{ job.job }}
           channel: deployments
-          icon_emoji: ':rocket:'
+          icon_emoji: ":rocket:"
           username: DeployBot
           text: |
             Deployment to Fly.io ${{ job.status == 'success' && 'completed successfully! :white_check_mark:' || 'failed! :x:' }}
-            
+
             *Repository:* ${{ github.repository }}
             *Branch:* ${{ github.ref_name }}
             *Commit:* ${{ github.sha }}
             *Author:* ${{ github.actor }}
             *Commit Message:* ${{ github.event.head_commit.message }}
-            
+
             *Workflow:* ${{ github.workflow }}
             *Run ID:* ${{ github.run_id }}
-            
-            *Test Results:*
-            - [API Test Results](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}/artifacts/api_test_results.txt)
-            - [Prompt Test Results](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}/artifacts/prompt_test_results.txt)
-            
+
+            *Test Results Summary:*
+            API Tests (last 5 lines):            ```
+            ${{ steps.test_summary.outputs.API_TESTS }}            ```
+            Prompt Tests (last 5 lines):            ```
+            ${{ steps.test_summary.outputs.PROMPT_TESTS }}            ```
+
+            *Full Test Results:*
+            [Download Test Results](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})
+            (Go to the "Artifacts" section and download the "test-results" artifact)
+
             [View Action Run](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

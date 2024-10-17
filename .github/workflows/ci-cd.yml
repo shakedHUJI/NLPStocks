@@ -58,6 +58,7 @@ jobs:
         run: |
           echo "FLY_API_TOKEN is set: ${{ secrets.FLY_API_TOKEN != '' }}" 
           mkdir -p deployment_log
+          flyctl auth token "$FLY_API_TOKEN"
           flyctl deploy --remote-only > deployment_log/deploy.log 2>&1 || (cat deployment_log/deploy.log && exit 1)
       - name: Save deployment log
         if: always()
@@ -90,19 +91,21 @@ jobs:
         id: slack-message
         run: |
           echo "Test Results:" > message.txt
-          echo "API Tests: $(cat test_results/api_tests.log)" >> message.txt
-          echo "Prompt Tests: $(cat test_results/prompt_tests.log)" >> message.txt
-          echo "\nDeployment Status:" >> message.txt
+          echo "API Tests: $(cat test_results/api_tests.log | sed 's/^/  /')" >> message.txt
+          echo "Prompt Tests: $(cat test_results/prompt_tests.log | sed 's/^/  /')" >> message.txt
+          echo "Deployment Status:" >> message.txt
           if [ -f deployment_log/deploy.log ]; then
-            echo "$(tail -n 10 deployment_log/deploy.log)" >> message.txt
+            echo "$(tail -n 10 deployment_log/deploy.log | sed 's/^/  /')" >> message.txt
           else
-            echo "Deployment log not found" >> message.txt
+            echo "  Deployment log not found" >> message.txt
           fi
           MESSAGE=$(cat message.txt)
           MESSAGE="${MESSAGE//'%'/'%25'}"
           MESSAGE="${MESSAGE//$'\n'/'%0A'}"
           MESSAGE="${MESSAGE//$'\r'/'%0D'}"
-          echo "message=$MESSAGE" >> $GITHUB_OUTPUT
+          echo "message<<EOF" >> $GITHUB_OUTPUT
+          echo "$MESSAGE" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
       - name: Send Slack Notification
         uses: 8398a7/action-slack@v3
         with:

@@ -5,33 +5,45 @@ on:
     branches: [main]
 
 jobs:
-  # test_backend:
-  #   runs-on: ubuntu-latest
-  #   steps:
-  #     - uses: actions/checkout@v4
-  #     - name: Set up Python
-  #       uses: actions/setup-python@v5
-  #       with:
-  #         python-version: "3.9"
-  #     - name: Install dependencies
-  #       run: |
-  #         python -m pip install --upgrade pip
-  #         pip install -r backend/requirements.txt
-  #     - name: Run API endpoint tests
-  #       env:
-  #         OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
-  #       run: |
-  #         echo "OPENAI_API_KEY is set: ${{ secrets.OPENAI_API_KEY != '' }}"
-  #         pytest -vv backend/test_api_endpoints.py
-  #     - name: Run prompt tests with coverage
-  #       env:
-  #           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
-  #       run: |
-  #         cd backend
-  #         pytest --cov=test_prompts --cov-report=term-missing --cov-fail-under=95 -vv test_prompts.py
+  test_backend:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.9"
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r backend/requirements.txt
+      - name: Run API endpoint tests
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+        run: |
+          echo "OPENAI_API_KEY is set: ${{ secrets.OPENAI_API_KEY != '' }}"
+          pytest -vv backend/test_api_endpoints.py
+      - name: Run prompt tests with coverage
+        env:
+            OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+        run: |
+          cd backend
+          pytest --cov=test_prompts --cov-report=term-missing --cov-fail-under=95 -vv test_prompts.py
+      - name: Save test results
+        if: always()
+        run: |
+          mkdir -p test_results
+          pytest -vv backend/test_api_endpoints.py > test_results/api_tests.log 2>&1
+          cd backend && pytest --cov=test_prompts --cov-report=term-missing --cov-fail-under=95 -vv test_prompts.py > ../test_results/prompt_tests.log 2>&1
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v2
+        with:
+          name: test-results
+          path: test_results
 
   deploy:
-    # needs: test_backend
+    needs: test_backend
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -43,16 +55,55 @@ jobs:
         run: |
           echo "FLY_API_TOKEN is set: ${{ secrets.FLY_API_TOKEN != '' }}" 
           flyctl deploy --remote-only
+      - name: Save deployment log
+        if: always()
+        run: |
+          mkdir -p deployment_log
+          flyctl deploy --remote-only > deployment_log/deploy.log 2>&1
+      - name: Upload deployment log
+        if: always()
+        uses: actions/upload-artifact@v2
+        with:
+          name: deployment-log
+          path: deployment_log
 
   notify_slack:
-    needs: deploy
+    needs: [test_backend, deploy]
     runs-on: ubuntu-latest
+    if: always()
     steps:
+      - name: Download test results
+        uses: actions/download-artifact@v2
+        with:
+          name: test-results
+          path: test_results
+      - name: Download deployment log
+        uses: actions/download-artifact@v2
+        with:
+          name: deployment-log
+          path: deployment_log
+      - name: Prepare Slack message
+        id: slack-message
+        run: |
+          echo "API Tests:" > message.txt
+          cat test_results/api_tests.log >> message.txt
+          echo "\nPrompt Tests:" >> message.txt
+          cat test_results/prompt_tests.log >> message.txt
+          echo "\nDeployment Log:" >> message.txt
+          cat deployment_log/deploy.log >> message.txt
+          MESSAGE=$(cat message.txt)
+          MESSAGE="${MESSAGE//'%'/'%25'}"
+          MESSAGE="${MESSAGE//$'\n'/'%0A'}"
+          MESSAGE="${MESSAGE//$'\r'/'%0D'}"
+          echo "::set-output name=message::$MESSAGE"
       - name: Send Slack Notification
         uses: 8398a7/action-slack@v3
         with:
           status: ${{ job.status }}
-          text: Deployment to Fly.io completed
+          text: |
+            Deployment to Fly.io completed
+            Test and Deployment Details:
+            ${{ steps.slack-message.outputs.message }}
           fields: repo,message,commit,author,action,eventName,ref,workflow
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

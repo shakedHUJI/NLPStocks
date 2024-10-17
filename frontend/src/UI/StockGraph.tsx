@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useRef, useState } from "react";
 import {
   AreaChart,
   Area,
@@ -43,6 +43,9 @@ const StockGraph: React.FC<StockGraphProps> = ({
   onClose,
   theme,
 }) => {
+  const [touchStartX, setTouchStartX] = useState<number | null>(null);
+  const chartRef = useRef<any>(null);
+
   const getGraphTitle = () => {
     if (compareMode) {
       return `${stockSymbols.join(" vs ")} Comparison`;
@@ -51,6 +54,47 @@ const StockGraph: React.FC<StockGraphProps> = ({
         ? `${stockSymbols[0]} Stock Performance`
         : `${stockSymbols.join(", ")} Stock Performance`;
     }
+  };
+
+  const handleTouchStart = (e: React.TouchEvent) => {
+    const touch = e.touches[0];
+    setTouchStartX(touch.clientX);
+    setZoomState((prev) => ({
+      ...prev,
+      refAreaLeft: getDataIndexFromTouch(touch),
+    }));
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    if (touchStartX !== null) {
+      const touch = e.touches[0];
+      setZoomState((prev) => ({
+        ...prev,
+        refAreaRight: getDataIndexFromTouch(touch),
+      }));
+    }
+  };
+
+  const handleTouchEnd = () => {
+    if (zoomState.refAreaLeft && zoomState.refAreaRight) {
+      handleZoom();
+    }
+    setTouchStartX(null);
+  };
+
+  const getDataIndexFromTouch = (touch: React.Touch) => {
+    if (chartRef.current) {
+      const chart = chartRef.current;
+      const chartRect = chart.getBoundingClientRect();
+      const xAxis = chart.querySelector(".recharts-xAxis");
+      const xAxisRect = xAxis.getBoundingClientRect();
+      const touchX = touch.clientX - chartRect.left;
+      const xAxisWidth = xAxisRect.width;
+      const dataLength = stockData.length;
+      const index = Math.round((touchX / xAxisWidth) * (dataLength - 1));
+      return stockData[index].date;
+    }
+    return null;
   };
 
   return (
@@ -65,6 +109,10 @@ const StockGraph: React.FC<StockGraphProps> = ({
         <div
           className="w-full h-[400px] select-none"
           onDoubleClick={handleDoubleClick}
+          onTouchStart={handleTouchStart}
+          onTouchMove={handleTouchMove}
+          onTouchEnd={handleTouchEnd}
+          ref={chartRef}
         >
           <ResponsiveContainer width="100%" height="100%">
             <AreaChart

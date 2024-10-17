@@ -37,7 +37,7 @@ jobs:
           cd backend && pytest --cov=test_prompts --cov-report=term-missing --cov-fail-under=95 -vv test_prompts.py > ../test_results/prompt_tests.log 2>&1
       - name: Upload test results
         if: always()
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v4
         with:
           name: test-results
           path: test_results
@@ -62,7 +62,7 @@ jobs:
           flyctl deploy --remote-only > deployment_log/deploy.log 2>&1
       - name: Upload deployment log
         if: always()
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v4
         with:
           name: deployment-log
           path: deployment_log
@@ -73,12 +73,12 @@ jobs:
     if: always()
     steps:
       - name: Download test results
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v4
         with:
           name: test-results
           path: test_results
       - name: Download deployment log
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v4
         with:
           name: deployment-log
           path: deployment_log

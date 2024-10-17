@@ -6,3 +6,4 @@ fastapi[standard]
 uvicorn
 pydantic
 pytest
+pytest-cov

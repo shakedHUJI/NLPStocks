@@ -2,7 +2,7 @@ import { useState } from "react";
 import axios from "axios";
 import { API_BASE_URL } from './config';
 
-function AIQueryProcessor({ onQueryProcessed }) {
+const AIQueryProcessor = ({ onQueryProcessed }) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
@@ -35,6 +35,6 @@ function AIQueryProcessor({ onQueryProcessed }) {
   };
 
   return { processQuery, loading, error };
-}
+};
 
 export default AIQueryProcessor;

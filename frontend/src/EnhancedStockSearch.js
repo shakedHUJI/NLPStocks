@@ -19,7 +19,7 @@ import {
 import "./EnhancedStockSearch.css";
 import LoadingDots from "./components/LoadingDots";
 import StockGraph from "./UI/StockGraph.tsx";
-import { useStockSearch } from "./hooks/useStockSearch";
+import useStockSearch from "./hooks/useStockSearch";
 import { EXAMPLE_PROMPTS } from "./constants";
 
 export default function EnhancedStockSearch() {
@@ -47,6 +47,8 @@ export default function EnhancedStockSearch() {
     aiAnalysisDescription,
     hasSearched,
     setShowGraph,
+    isDifferenceMode,
+    toggleDifferenceMode,
   } = useStockSearch();
 
   const { theme, setTheme } = useTheme();
@@ -243,6 +245,8 @@ export default function EnhancedStockSearch() {
                     handleDoubleClick={handleDoubleClick}
                     onClose={() => setShowGraph(false)}
                     theme={theme}
+                    isDifferenceMode={isDifferenceMode}
+                    toggleDifferenceMode={toggleDifferenceMode}
                   />
                 </motion.div>
               )}

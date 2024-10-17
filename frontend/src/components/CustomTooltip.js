@@ -1,7 +1,7 @@
 import React from "react";
 import { parseISO, isWithinInterval, subDays, addDays, differenceInDays } from "date-fns";
 
-const CustomTooltip = ({ active, payload, label, keyDates, colors, stockData }) => {
+const CustomTooltip = ({ active, payload, label, keyDates, colors, stockData, isDifferenceMode, selectionStart }) => {
   if (active && payload && payload.length) {
     const currentDate = parseISO(label);
     
@@ -21,6 +21,12 @@ const CustomTooltip = ({ active, payload, label, keyDates, colors, stockData }) 
       });
     });
 
+    const calculateDifference = (currentValue, startValue) => {
+      const diff = currentValue - startValue;
+      const percentage = ((diff / startValue) * 100).toFixed(2);
+      return `${diff.toFixed(2)} (${percentage}%)`;
+    };
+
     return (
       <div className="bg-white bg-opacity-85 dark:bg-gray-800 dark:bg-opacity-75 p-4 rounded-lg shadow-lg">
         <p className="text-sm font-semibold text-gray-600 dark:text-gray-300">{`Date: ${label}`}</p>
@@ -39,6 +45,11 @@ const CustomTooltip = ({ active, payload, label, keyDates, colors, stockData }) 
             style={{ color: colors[entry.name] }}
           >
             {`${entry.name}: $${entry.value.toFixed(2)}`}
+            {isDifferenceMode && selectionStart && (
+              <span className="ml-2">
+                Diff: {calculateDifference(entry.value, selectionStart.values[index].value)}
+              </span>
+            )}
           </p>
         ))}
       </div>

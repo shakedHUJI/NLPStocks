@@ -4,7 +4,7 @@ import AIQueryProcessor from "../AIQueryProcessor";
 import { fetchStockData, fetchMetrics, fetchNewsData } from "../api/stockApi";
 import { LINE_COLORS } from "../constants";
 
-export const useStockSearch = () => {
+const useStockSearch = () => {
   const [query, setQuery] = useState("");
   const [showGraph, setShowGraph] = useState(false);
   const [stockData, setStockData] = useState([]);
@@ -28,6 +28,7 @@ export const useStockSearch = () => {
   const [newsData, setNewsData] = useState([]);
   const [aiAnalysisDescription, setAiAnalysisDescription] = useState("");
   const [hasSearched, setHasSearched] = useState(false);
+  const [isDifferenceMode, setIsDifferenceMode] = useState(false);
 
   const handleSubmit = async (e, promptQuery = null) => {
     if (e) e.preventDefault();
@@ -218,6 +219,10 @@ export const useStockSearch = () => {
     },
   });
 
+  const toggleDifferenceMode = () => {
+    setIsDifferenceMode((prev) => !prev);
+  };
+
   return {
     query,
     setQuery,
@@ -242,5 +247,9 @@ export const useStockSearch = () => {
     aiAnalysisDescription,
     hasSearched,
     setShowGraph,
+    isDifferenceMode,
+    toggleDifferenceMode,
   };
 };
+
+export default useStockSearch;

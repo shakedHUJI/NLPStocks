@@ -129,7 +129,7 @@ async def process_query(request: QueryRequest):
                         "10. When a user asks to show events or significant dates related to a stock, include this information in the 'keyDates' array. Each entry should have a date, description, and associated symbol.\n\n"
                         "Return a JSON object with the following fields:\n"
                         "- 'actions' (array of action objects, each containing:)\n"
-                        "  - 'type' (e.g., 'getPrice', 'getHistory', 'getNews', 'compare', 'getMetrics', 'getEarnings')\n"
+                        "  - 'type' (one or more of: 'getHistory', 'getNews', 'getMetrics',)\n"
                         "  - 'symbols' (array of stock tickers)\n"
                         "  - 'startDate' (YYYY-MM-DD format)\n"
                         "  - 'endDate' (YYYY-MM-DD format or 'current' for the most recent data)\n"

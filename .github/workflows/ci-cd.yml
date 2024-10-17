@@ -34,6 +34,9 @@ jobs:
           echo "coverage=$coverage" >> $GITHUB_OUTPUT
           echo "test_count=$test_count" >> $GITHUB_OUTPUT
         id: prompt_tests
+    outputs:
+      coverage: ${{ steps.prompt_tests.outputs.coverage }}
+      test_count: ${{ steps.prompt_tests.outputs.test_count }}
 
   deploy:
     needs: test_backend
@@ -50,19 +53,29 @@ jobs:
           flyctl deploy --remote-only
 
   notify_slack:
+    if: always()
     needs: [test_backend, deploy]
     runs-on: ubuntu-latest
     steps:
+      - name: Determine API Endpoint Tests Status
+        run: |
+          if [ "${{ needs.test_backend.result }}" == "success" ]; then
+            echo "api_tests_status=Passed" >> $GITHUB_ENV
+          else
+            echo "api_tests_status=Failed" >> $GITHUB_ENV
+          fi
       - name: Send Slack Notification
         uses: 8398a7/action-slack@v3
         with:
           status: ${{ job.status }}
           text: |
-            Deployment to Fly.io completed
-            Test Results:
-            - API Endpoint Tests: Passed
-            - Prompt Tests Coverage: ${{ needs.test_backend.outputs.coverage }}%
-            - Number of Tests Run: ${{ needs.test_backend.outputs.test_count }}
+            CI/CD Pipeline Results:
+            - Test Backend: ${{ needs.test_backend.result }}
+              - API Endpoint Tests: ${{ env.api_tests_status }}
+              - Prompt Tests Coverage: ${{ needs.test_backend.outputs.coverage }}%
+              - Number of Tests Run: ${{ needs.test_backend.outputs.test_count }}
+            - Deploy: ${{ needs.deploy.result }}
+            - Overall Status: ${{ job.status }}
           fields: repo,message,commit,author,action,eventName,ref,workflow
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

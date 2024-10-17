@@ -1,11 +1,7 @@
 import { useState } from "react";
 import { parseISO, isAfter, isBefore } from "date-fns";
 import AIQueryProcessor from "../AIQueryProcessor";
-import {
-  fetchStockData,
-  fetchMetrics,
-  fetchNewsData,
-} from "../api/stockApi";
+import { fetchStockData, fetchMetrics, fetchNewsData } from "../api/stockApi";
 import { LINE_COLORS } from "../constants";
 
 export const useStockSearch = () => {
@@ -35,7 +31,7 @@ export const useStockSearch = () => {
 
   const handleSubmit = async (e, promptQuery = null) => {
     if (e) e.preventDefault();
-    
+
     const searchQuery = promptQuery || query;
     if (!searchQuery.trim()) {
       setError("Please enter a query");
@@ -65,15 +61,20 @@ export const useStockSearch = () => {
               setLoadingState("Fetching news data");
               await handleFetchNewsData(action.symbols[0]);
               break;
-            case "compare":
             case "getHistory":
               setStockSymbols(action.symbols);
               setCompareMode(action.type === "compare");
-              handleFetchStockData(action.symbols, action.startDate, action.endDate);
+              handleFetchStockData(
+                action.symbols,
+                action.startDate,
+                action.endDate
+              );
               break;
             case "getMetrics":
               handleFetchMetrics(action.symbols, action.metrics);
               break;
+            default:
+              throw new Error(`Unsupported action type: ${action.type}`);
           }
         }
 
@@ -127,7 +128,9 @@ export const useStockSearch = () => {
       setLoadingState("");
     } catch (err) {
       console.error("Error fetching metrics:", err);
-      setError("Failed to fetch metrics. Please check the console for more details.");
+      setError(
+        "Failed to fetch metrics. Please check the console for more details."
+      );
       setLoadingState("");
     }
   };

@@ -68,6 +68,10 @@ export default function EnhancedStockSearch() {
     handleZoomOut();
   };
 
+  const handleHeaderClick = () => {
+    window.location.reload();
+  };
+
   return (
     <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
       <TooltipProvider>
@@ -83,9 +87,10 @@ export default function EnhancedStockSearch() {
               <motion.h1
                 initial={{ x: -20 }}
                 animate={{ x: 0 }}
-                className="text-3xl sm:text-4xl font-bold text-gray-800 dark:text-gray-100 mb-4 sm:mb-0"
+                className="text-3xl sm:text-4xl font-bold text-gray-800 dark:text-gray-100 mb-4 sm:mb-0 cursor-pointer"
+                onClick={handleHeaderClick}
               >
-                NLP Stock Insights
+                Stock Chat
               </motion.h1>
               <TooltipProvider>
                 <Tooltip>

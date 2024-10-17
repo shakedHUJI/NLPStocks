@@ -12,8 +12,7 @@ import {
   Legend,
 } from "recharts";
 import { Card, CardHeader, CardTitle, CardContent } from "./card.tsx";
-import { Button } from "./button.tsx";
-import { X, TrendingUp } from "lucide-react";
+import { TrendingUp } from "lucide-react";
 import CustomTooltip from "../components/CustomTooltip";
 
 interface StockGraphProps {
@@ -35,7 +34,6 @@ const StockGraph: React.FC<StockGraphProps> = ({
   stockData,
   stockSymbols,
   colorMap,
-  description,
   keyDates,
   compareMode,
   zoomState,

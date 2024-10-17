@@ -43,15 +43,11 @@ const StockGraph: React.FC<StockGraphProps> = ({
   setZoomState,
   handleZoom,
   handleDoubleClick,
-  onClose,
   theme,
-  isDifferenceMode,
-  toggleDifferenceMode,
 }) => {
-  const [touchStartX, setTouchStartX] = useState<number | null>(null);
   const chartRef = useRef<any>(null);
   const [selectionStart, setSelectionStart] = useState<any>(null);
-  const [mode, setMode] = useState<"zoom" | "difference" | "view">("zoom");
+  const [mode, setMode] = useState<"zoom" | "difference" | "view">("difference");
 
   const getGraphTitle = () => {
     if (compareMode) {
@@ -63,46 +59,7 @@ const StockGraph: React.FC<StockGraphProps> = ({
     }
   };
 
-  const handleTouchStart = (e: React.TouchEvent) => {
-    const touch = e.touches[0];
-    setTouchStartX(touch.clientX);
-    setZoomState((prev) => ({
-      ...prev,
-      refAreaLeft: getDataIndexFromTouch(touch),
-    }));
-  };
 
-  const handleTouchMove = (e: React.TouchEvent) => {
-    if (touchStartX !== null) {
-      const touch = e.touches[0];
-      setZoomState((prev) => ({
-        ...prev,
-        refAreaRight: getDataIndexFromTouch(touch),
-      }));
-    }
-  };
-
-  const handleTouchEnd = () => {
-    if (zoomState.refAreaLeft && zoomState.refAreaRight) {
-      handleZoom();
-    }
-    setTouchStartX(null);
-  };
-
-  const getDataIndexFromTouch = (touch: React.Touch) => {
-    if (chartRef.current) {
-      const chart = chartRef.current;
-      const chartRect = chart.getBoundingClientRect();
-      const xAxis = chart.querySelector(".recharts-xAxis");
-      const xAxisRect = xAxis.getBoundingClientRect();
-      const touchX = touch.clientX - chartRect.left;
-      const xAxisWidth = xAxisRect.width;
-      const dataLength = stockData.length;
-      const index = Math.round((touchX / xAxisWidth) * (dataLength - 1));
-      return stockData[index].date;
-    }
-    return null;
-  };
 
   const handleSelectionStart = (e: any) => {
     if (!e || mode === "view") return;
@@ -258,7 +215,7 @@ const StockGraph: React.FC<StockGraphProps> = ({
                   paddingTop: "20px",
                   fontSize: "0.8rem",
                 }}
-                formatter={(value, entry) => (
+                formatter={(value) => (
                   <span style={{ color: colorMap[value] }}>{value}</span>
                 )}
               />
@@ -304,7 +261,6 @@ const StockGraph: React.FC<StockGraphProps> = ({
       <CardFooter className="flex justify-center mt-4">
         <Button
           onClick={toggleMode}
-          variant={mode !== "zoom" ? "default" : "outline"}
           size="sm"
         >
           {mode === "zoom" ? "Zoom Mode" : mode === "difference" ? "Difference Mode" : "View Mode"}

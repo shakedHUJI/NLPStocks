@@ -33,10 +33,10 @@ jobs:
         if: always()
         run: |
           mkdir -p test_results
-          echo "Running API endpoint tests..."
-          pytest -vv backend/test_api_endpoints.py > test_results/api_tests.log 2>&1 || echo "API tests failed"
-          echo "Running prompt tests..."
-          cd backend && pytest --cov=test_prompts --cov-report=term-missing --cov-fail-under=95 -vv test_prompts.py > ../test_results/prompt_tests.log 2>&1 || echo "Prompt tests failed"
+          echo "API endpoint test results:" > test_results/api_tests.log
+          cat /home/runner/.pytest_cache/v/cache/lastfailed >> test_results/api_tests.log || echo "No API test failures found" >> test_results/api_tests.log
+          echo "Prompt test results:" > test_results/prompt_tests.log
+          cat backend/.pytest_cache/v/cache/lastfailed >> test_results/prompt_tests.log || echo "No prompt test failures found" >> test_results/prompt_tests.log
           echo "Test result saving completed"
       - name: Upload test results
         if: always()
@@ -57,7 +57,8 @@ jobs:
           FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
         run: |
           echo "FLY_API_TOKEN is set: ${{ secrets.FLY_API_TOKEN != '' }}" 
-          flyctl deploy --remote-only
+          mkdir -p deployment_log
+          flyctl deploy --remote-only > deployment_log/deploy.log 2>&1 || (cat deployment_log/deploy.log && exit 1)
       - name: Save deployment log
         if: always()
         run: |
@@ -88,17 +89,20 @@ jobs:
       - name: Prepare Slack message
         id: slack-message
         run: |
-          echo "API Tests:" > message.txt
-          cat test_results/api_tests.log >> message.txt
-          echo "\nPrompt Tests:" >> message.txt
-          cat test_results/prompt_tests.log >> message.txt
-          echo "\nDeployment Log:" >> message.txt
-          cat deployment_log/deploy.log >> message.txt
+          echo "Test Results:" > message.txt
+          echo "API Tests: $(cat test_results/api_tests.log)" >> message.txt
+          echo "Prompt Tests: $(cat test_results/prompt_tests.log)" >> message.txt
+          echo "\nDeployment Status:" >> message.txt
+          if [ -f deployment_log/deploy.log ]; then
+            echo "$(tail -n 10 deployment_log/deploy.log)" >> message.txt
+          else
+            echo "Deployment log not found" >> message.txt
+          fi
           MESSAGE=$(cat message.txt)
           MESSAGE="${MESSAGE//'%'/'%25'}"
           MESSAGE="${MESSAGE//$'\n'/'%0A'}"
           MESSAGE="${MESSAGE//$'\r'/'%0D'}"
-          echo "::set-output name=message::$MESSAGE"
+          echo "message=$MESSAGE" >> $GITHUB_OUTPUT
       - name: Send Slack Notification
         uses: 8398a7/action-slack@v3
         with:

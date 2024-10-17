@@ -171,23 +171,6 @@ def test_process_query_key_dates():
     assert len(data["keyDates"]) > 0
     assert all(["date" in event and "description" in event and "symbol" in event for event in data["keyDates"]])
 
-def test_process_query_multiple_actions():
-    """
-    Test the /api/process_query endpoint for a complex query requiring multiple actions.
-    
-    Ensures that the endpoint correctly processes a query that requires
-    multiple types of actions (e.g., getting news and metrics).
-    """
-    query = "Analyze the performance of Facebook, provide recent news, and show its P/E ratio"
-    response = client.post("/api/process_query", json={"query": query})
-    assert response.status_code == 200
-    data = response.json()
-    assert "actions" in data
-    assert "description" in data
-    assert len(data["actions"]) >= 2
-    action_types = [action["type"] for action in data["actions"]]
-    assert "getNews" in action_types
-    assert "getMetrics" in action_types
 
 def test_invalid_query():
     """

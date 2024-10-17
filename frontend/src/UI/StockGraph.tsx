@@ -51,6 +51,7 @@ const StockGraph: React.FC<StockGraphProps> = ({
   const [touchStartX, setTouchStartX] = useState<number | null>(null);
   const chartRef = useRef<any>(null);
   const [selectionStart, setSelectionStart] = useState<any>(null);
+  const [mode, setMode] = useState<"zoom" | "difference" | "view">("zoom");
 
   const getGraphTitle = () => {
     if (compareMode) {
@@ -104,7 +105,7 @@ const StockGraph: React.FC<StockGraphProps> = ({
   };
 
   const handleSelectionStart = (e: any) => {
-    if (!e) return;
+    if (!e || mode === "view") return;
     const { activeLabel, activePayload } = e;
     if (activeLabel && activePayload) {
       setSelectionStart({ date: activeLabel, values: activePayload });
@@ -116,9 +117,9 @@ const StockGraph: React.FC<StockGraphProps> = ({
   };
 
   const handleSelectionMove = (e: any) => {
-    if (!e) return;
+    if (!e || mode === "view") return;
     const { activeLabel } = e;
-    if (activeLabel && (isDifferenceMode || !isDifferenceMode)) {
+    if (activeLabel) {
       setZoomState((prev) => ({
         ...prev,
         refAreaRight: activeLabel,
@@ -127,9 +128,10 @@ const StockGraph: React.FC<StockGraphProps> = ({
   };
 
   const handleSelectionEnd = () => {
-    if (isDifferenceMode) {
+    if (mode === "view") return;
+    if (mode === "difference") {
       setSelectionStart(null);
-    } else {
+    } else if (mode === "zoom") {
       handleZoom();
     }
     setZoomState((prev) => ({
@@ -137,6 +139,19 @@ const StockGraph: React.FC<StockGraphProps> = ({
       refAreaLeft: "",
       refAreaRight: "",
     }));
+  };
+
+  const toggleMode = () => {
+    setMode((prevMode) => {
+      switch (prevMode) {
+        case "zoom":
+          return "difference";
+        case "difference":
+          return "view";
+        case "view":
+          return "zoom";
+      }
+    });
   };
 
   return (
@@ -229,7 +244,7 @@ const StockGraph: React.FC<StockGraphProps> = ({
                     keyDates={keyDates}
                     colors={colorMap}
                     stockData={stockData}
-                    isDifferenceMode={isDifferenceMode}
+                    isDifferenceMode={mode === "difference"}
                     selectionStart={selectionStart}
                   />
                 )}
@@ -288,11 +303,11 @@ const StockGraph: React.FC<StockGraphProps> = ({
       </CardContent>
       <CardFooter className="flex justify-center mt-4">
         <Button
-          onClick={toggleDifferenceMode}
-          variant={isDifferenceMode ? "default" : "outline"}
+          onClick={toggleMode}
+          variant={mode !== "zoom" ? "default" : "outline"}
           size="sm"
         >
-          {isDifferenceMode ? "Zoom Mode" : "Difference Mode"}
+          {mode === "zoom" ? "Zoom Mode" : mode === "difference" ? "Difference Mode" : "View Mode"}
         </Button>
       </CardFooter>
     </Card>

@@ -77,9 +77,19 @@ export default function EnhancedStockSearch() {
   return (
     <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
       <TooltipProvider>
-        <div className="min-h-screen p-4 sm:p-8 transition-colors duration-200 bg-gradient-to-br from-gray-300 via-gray-350 to-gray-300 dark:from-gray-900 dark:via-gray-600 dark:to-gray-800 overflow-x-hidden flex items-center justify-center">
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.5 }}
+          className="min-h-screen p-2 sm:p-8 transition-colors duration-500 bg-gradient-to-br from-gray-300 via-gray-350 to-gray-300 dark:from-gray-900 dark:via-gray-600 dark:to-gray-800 overflow-x-hidden flex flex-col"
+        >
           {/* Theme toggle button */}
-          <div className="absolute top-4 right-4 z-50">
+          <motion.div
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.2 }}
+            className="fixed top-4 right-4 z-50"
+          >
             <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger asChild>
@@ -99,28 +109,42 @@ export default function EnhancedStockSearch() {
                 </TooltipContent>
               </Tooltip>
             </TooltipProvider>
-          </div>
+          </motion.div>
 
           <motion.div
-            initial={{ opacity: 0, y: -20 }}
+            initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5 }}
-            className="w-full max-w-5xl mx-auto p-8 rounded-lg"
+            transition={{ duration: 0.5, delay: 0.1 }}
+            className={`w-full max-w-[95%] sm:max-w-5xl mx-auto p-2 sm:p-8 rounded-lg ${
+              hasSearched ? "mt-0" : "mt-auto mb-auto"
+            }`}
           >
             {/* Header */}
-            <div className="flex justify-center items-center mb-10 mt-4">
+            <motion.div
+              layout
+              transition={{ type: "spring", stiffness: 200, damping: 25 }}
+              className={`flex justify-center items-center ${
+                hasSearched ? "mb-10" : "mb-10 mt-4"
+              }`}
+            >
               <motion.h1
-                initial={{ x: -20 }}
-                animate={{ x: 0 }}
+                initial={{ x: -20, opacity: 0 }}
+                animate={{ x: 0, opacity: 1 }}
+                transition={{ duration: 0.5, delay: 0.2 }}
                 className="text-3xl sm:text-4xl font-bold text-gray-800 dark:text-gray-100 cursor-pointer"
                 onClick={handleHeaderClick}
               >
                 Stock Chat
               </motion.h1>
-            </div>
+            </motion.div>
 
             {/* Search form */}
-            <form onSubmit={handleSubmit} className="mb-8">
+            <motion.form
+              layout
+              transition={{ type: "spring", stiffness: 300, damping: 30 }}
+              onSubmit={handleSubmit}
+              className={`${hasSearched ? "mb-4" : "mb-8"}`}
+            >
               <div className="flex flex-col sm:flex-row gap-4">
                 <div className="relative flex-grow">
                   <Input
@@ -148,14 +172,15 @@ export default function EnhancedStockSearch() {
                   </Button>
                 </div>
               </div>
-            </form>
+            </motion.form>
 
             {/* Example prompts */}
             {!hasSearched && (
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5, delay: 0.2 }}
+                exit={{ opacity: 0, y: -20 }}
+                transition={{ duration: 0.5, delay: 0.3 }}
                 className="mb-8"
               >
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -173,10 +198,11 @@ export default function EnhancedStockSearch() {
               </motion.div>
             )}
 
-            <AnimatePresence>
+            <AnimatePresence mode="wait">
               {/* Loading state */}
               {loadingState && (
                 <motion.p
+                  key="loading"
                   initial={{ opacity: 0, y: -10 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -10 }}
@@ -191,6 +217,7 @@ export default function EnhancedStockSearch() {
               {/* Error messages */}
               {(error || aiError) && (
                 <motion.p
+                  key="error"
                   initial={{ opacity: 0, y: -10 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -10 }}
@@ -233,7 +260,12 @@ export default function EnhancedStockSearch() {
                   initial={{ opacity: 0, scale: 0.95 }}
                   animate={{ opacity: 1, scale: 1 }}
                   exit={{ opacity: 0, scale: 0.95 }}
-                  transition={{ duration: 0.5 }}
+                  transition={{
+                    duration: 0.5,
+                    type: "spring",
+                    stiffness: 300,
+                    damping: 25,
+                  }}
                   className="w-full mt-8"
                 >
                   <StockGraph
@@ -262,7 +294,7 @@ export default function EnhancedStockSearch() {
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: 20 }}
-                  transition={{ duration: 0.5 }}
+                  transition={{ duration: 0.5, delay: 0.2 }}
                   className="w-full mt-8"
                 >
                   <Card toggleable defaultOpen>
@@ -322,7 +354,7 @@ export default function EnhancedStockSearch() {
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: 20 }}
-                  transition={{ duration: 0.5 }}
+                  transition={{ duration: 0.5, delay: 0.3 }}
                   className="w-full mt-8"
                 >
                   <Card toggleable defaultOpen>
@@ -370,7 +402,7 @@ export default function EnhancedStockSearch() {
               )}
             </AnimatePresence>
           </motion.div>
-        </div>
+        </motion.div>
       </TooltipProvider>
     </ThemeProvider>
   );

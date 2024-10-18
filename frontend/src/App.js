@@ -1,5 +1,5 @@
 import React from "react";
-import EnhancedStockSearch from "./EnhancedStockSearch";
+import EnhancedStockSearch from "./StockSearch";
 
 // New ErrorBoundary component
 class ErrorBoundary extends React.Component {

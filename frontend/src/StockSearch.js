@@ -16,11 +16,11 @@ import {
   TooltipProvider,
 } from "./UI/tooltip.tsx";
 
-import "./EnhancedStockSearch.css";
-import LoadingDots from "./components/LoadingDots";
+import "./StockSearch.css";
+import LoadingDots from "./components/LoadingDots.js";
 import StockGraph from "./UI/StockGraph.tsx";
-import useStockSearch from "./hooks/useStockSearch";
-import { EXAMPLE_PROMPTS } from "./constants";
+import useStockSearch from "./hooks/useStockSearch.js";
+import { EXAMPLE_PROMPTS } from "./constants/index.js";
 
 export default function EnhancedStockSearch() {
   const {

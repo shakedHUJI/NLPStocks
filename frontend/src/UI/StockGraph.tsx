@@ -55,6 +55,7 @@ const StockGraph: React.FC<StockGraphProps> = ({
   const chartRef = useRef<any>(null);
   const [selectionStart, setSelectionStart] = useState<any>(null);
   const [mode, setMode] = useState<"zoom" | "difference" | "view">("difference");
+  const [isInteracting, setIsInteracting] = useState(false);
 
   /**
    * Get the title for the graph based on the current mode and stock symbols
@@ -74,6 +75,7 @@ const StockGraph: React.FC<StockGraphProps> = ({
    */
   const handleSelectionStart = (e: any) => {
     if (!e || mode === "view") return;
+    setIsInteracting(true);
     const { activeLabel, activePayload } = e;
     if (activeLabel && activePayload) {
       setSelectionStart({ date: activeLabel, values: activePayload });
@@ -102,6 +104,7 @@ const StockGraph: React.FC<StockGraphProps> = ({
    * Handle the end of a selection on the graph
    */
   const handleSelectionEnd = () => {
+    setIsInteracting(false);
     if (mode === "view") return;
     if (mode === "difference") {
       setSelectionStart(null);
@@ -136,7 +139,9 @@ const StockGraph: React.FC<StockGraphProps> = ({
     const chartElement = chartRef.current;
     if (chartElement) {
       const preventScroll = (e: TouchEvent) => {
-        e.preventDefault();
+        if (isInteracting) {
+          e.preventDefault();
+        }
       };
       
       chartElement.addEventListener('touchmove', preventScroll, { passive: false });
@@ -145,7 +150,7 @@ const StockGraph: React.FC<StockGraphProps> = ({
         chartElement.removeEventListener('touchmove', preventScroll);
       };
     }
-  }, []);
+  }, [isInteracting]);
 
   return (
     <Card className="min-w-[300px] w-full relative">
@@ -166,6 +171,11 @@ const StockGraph: React.FC<StockGraphProps> = ({
           onDoubleClick={handleDoubleClick}
           onContextMenu={toggleMode}
           ref={chartRef}
+          onMouseDown={() => setIsInteracting(true)}
+          onMouseUp={() => setIsInteracting(false)}
+          onMouseLeave={() => setIsInteracting(false)}
+          onTouchStart={() => setIsInteracting(true)}
+          onTouchEnd={() => setIsInteracting(false)}
         >
           <ResponsiveContainer width="100%" height="100%">
             <AreaChart

@@ -18,7 +18,7 @@ app = FastAPI()
 # Add CORS middleware
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["https://stockchat.co", "https://www.stockchat.co", "http://localhost:3000"], # TBD: remove localhost 
+    allow_origins=["https://stockchat.co", "https://www.stockchat.co", "http://localhost:3000"], # TODO: remove localhost 
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -57,6 +57,9 @@ async def get_stock_data(symbols: str = Query(...), start_date: str = Query(...)
             logging.debug(traceback.format_exc())
             raise HTTPException(status_code=500, detail=f"Error fetching data for {symbol}: {str(e)}")
 
+    if not data:
+        raise HTTPException(status_code=404, detail="No valid data found for any of the provided symbols")
+
     logging.info(f"Returning data for {len(data)} symbols")
     return data
 
@@ -73,7 +76,7 @@ async def get_stock_metrics(symbols: str = Query(...), metrics: str = Query(...)
             stock = yf.Ticker(symbol)
             info = stock.info
 
-            if not info:
+            if not info or len(info) == 0:
                 raise ValueError(f"No data available for symbol: {symbol}")
 
             symbol_metrics = {}
@@ -89,6 +92,9 @@ async def get_stock_metrics(symbols: str = Query(...), metrics: str = Query(...)
                     symbol_metrics[metric] = 'N/A'
                     logging.warning(f"{symbol} - Metric not found: {metric}")
             
+            if all(value == 'N/A' for value in symbol_metrics.values()):
+                raise ValueError(f"No valid metrics found for symbol: {symbol}")
+            
             result[symbol] = symbol_metrics
             logging.info(f"Successfully fetched metrics for {symbol}")
         except ValueError as ve:
@@ -98,6 +104,9 @@ async def get_stock_metrics(symbols: str = Query(...), metrics: str = Query(...)
             logging.error(f"Error fetching metrics for {symbol}: {str(e)}")
             logging.debug(traceback.format_exc())
             raise HTTPException(status_code=500, detail=f"Error fetching metrics for {symbol}: {str(e)}")
+
+    if not result:
+        raise HTTPException(status_code=404, detail="No valid data found for any of the provided symbols")
 
     logging.info(f"Returning metrics for {len(result)} symbols")
     return result
@@ -176,8 +185,13 @@ async def get_stock_news(symbol: str = Query(...)):
     try:
         stock = yf.Ticker(symbol)
         news = stock.news
+        if not news:
+            raise ValueError(f"No news data available for symbol: {symbol}")
         logging.info(f"Fetched {len(news)} news items for {symbol}")
         return news[:8]  # Return the first 8 news items
+    except ValueError as ve:
+        logging.error(f"Error fetching news for {symbol}: {str(ve)}")
+        raise HTTPException(status_code=404, detail=str(ve))
     except Exception as e:
         logging.error(f"Error fetching news for {symbol}: {str(e)}")
         logging.debug(traceback.format_exc())

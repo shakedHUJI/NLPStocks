@@ -88,7 +88,7 @@ export default function EnhancedStockSearch() {
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.2 }}
-            className="fixed top-4 right-4 z-50"
+            className="absolute top-4 right-4 z-50"
           >
             <TooltipProvider>
               <Tooltip>
@@ -123,9 +123,7 @@ export default function EnhancedStockSearch() {
             <motion.div
               layout
               transition={{ type: "spring", stiffness: 200, damping: 25 }}
-              className={`flex justify-center items-center ${
-                hasSearched ? "mb-10" : "mb-10 mt-4"
-              }`}
+              className={"flex justify-center items-center mb-10 mt-5"}
             >
               <motion.h1
                 initial={{ x: -20, opacity: 0 }}
@@ -141,7 +139,7 @@ export default function EnhancedStockSearch() {
             {/* Search form */}
             <motion.form
               layout
-              transition={{ type: "spring", stiffness: 300, damping: 30 }}
+              transition={{ type: "spring", stiffness: 200, damping: 30 }}
               onSubmit={handleSubmit}
               className={`${hasSearched ? "mb-4" : "mb-8"}`}
             >

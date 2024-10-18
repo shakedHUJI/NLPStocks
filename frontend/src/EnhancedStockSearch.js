@@ -85,11 +85,11 @@ export default function EnhancedStockSearch() {
             className="max-w-full sm:max-w-4xl mx-auto"
           >
             {/* Header */}
-            <div className="flex flex-col sm:flex-row justify-between items-center mb-8">
+            <div className="flex justify-between items-center mb-8 relative">
               <motion.h1
                 initial={{ x: -20 }}
                 animate={{ x: 0 }}
-                className="text-3xl sm:text-4xl font-bold text-gray-800 dark:text-gray-100 mb-4 sm:mb-0 cursor-pointer"
+                className="text-3xl sm:text-4xl font-bold text-gray-800 dark:text-gray-100 cursor-pointer"
                 onClick={handleHeaderClick}
               >
                 Stock Chat
@@ -101,7 +101,7 @@ export default function EnhancedStockSearch() {
                       variant="outline"
                       size="icon"
                       onClick={toggleTheme}
-                      className="rounded-full"
+                      className="rounded-full absolute top-0 right-0"
                     >
                       <Sun className="h-[1.2rem] w-[1.2rem] rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
                       <Moon className="absolute h-[1.2rem] w-[1.2rem] rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
@@ -124,28 +124,29 @@ export default function EnhancedStockSearch() {
                     placeholder="Ask about stock performance..."
                     value={query}
                     onChange={(e) => setQuery(e.target.value)}
-                    className="pr-8 bg-white bg-opacity-90 dark:bg-gray-800 dark:bg-opacity-50 backdrop-blur-sm w-full"
+                    className="pr-16 bg-white bg-opacity-90 dark:bg-gray-800 dark:bg-opacity-50 backdrop-blur-sm w-full"
                   />
                   {query && (
                     <button
                       type="button"
                       onClick={clearInput}
-                      className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+                      className="absolute right-10 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
                     >
                       <X className="h-4 w-4" />
                     </button>
                   )}
+                  <Button
+                    type="submit"
+                    disabled={loading}
+                    className="absolute right-0 top-0 h-full rounded-l-none"
+                  >
+                    <Search className="h-4 w-4" />
+                  </Button>
                 </div>
-                <Button
-                  type="submit"
-                  disabled={loading}
-                  className="w-full sm:w-auto"
-                >
-                  <Search className="mr-2 h-4 w-4" /> Search
-                </Button>
               </div>
             </form>
 
+            {/* Rest of the component remains unchanged */}
             {/* Example prompts */}
             {!hasSearched && (
               <motion.div

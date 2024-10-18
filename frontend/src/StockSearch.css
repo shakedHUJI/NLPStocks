@@ -1,7 +1,13 @@
 @keyframes blink {
-  0% { opacity: 0; }
-  50% { opacity: 1; }
-  100% { opacity: 0; }
+  0% {
+    opacity: 0;
+  }
+  50% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
 }
 
 .loading-dots .dot {
@@ -26,6 +32,35 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 }
 
 input[type="date"]:disabled {
-  color: #9CA3AF;
+  color: #9ca3af;
   cursor: not-allowed;
+}
+
+.gradient-text {
+  background-clip: text;
+  -webkit-background-clip: text;
+  background-image: linear-gradient(to right, #545ee9, #8b5cf6, #ec4899);
+  color: currentColor;
+  transition: color 0.3s ease-in-out, transform 0.3s ease-in-out,
+    text-shadow 0.3s ease-in-out;
+  display: inline-block;
+}
+
+.hover-gradient .gradient-text {
+  color: transparent;
+  background-position: 200% center;
+  transform: scale(1.01);
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+@keyframes gradient {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
 }

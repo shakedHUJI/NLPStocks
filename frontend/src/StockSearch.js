@@ -74,6 +74,8 @@ export default function EnhancedStockSearch() {
     window.location.reload();
   };
 
+  const [isHeaderHovered, setIsHeaderHovered] = React.useState(false);
+
   return (
     <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
       <TooltipProvider>
@@ -129,10 +131,14 @@ export default function EnhancedStockSearch() {
                 initial={{ x: -20, opacity: 0 }}
                 animate={{ x: 0, opacity: 1 }}
                 transition={{ duration: 0.5, delay: 0.2 }}
-                className="text-3xl sm:text-4xl font-bold text-gray-800 dark:text-gray-100 cursor-pointer"
+                className={`text-3xl sm:text-4xl font-bold cursor-pointer ${
+                  isHeaderHovered ? "hover-gradient" : ""
+                }`}
                 onClick={handleHeaderClick}
+                onMouseEnter={() => setIsHeaderHovered(true)}
+                onMouseLeave={() => setIsHeaderHovered(false)}
               >
-                Stock Chat
+                <span className="gradient-text">Stock Chat</span>
               </motion.h1>
             </motion.div>
 

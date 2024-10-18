@@ -5,7 +5,7 @@ on:
     branches: [main]
 
 jobs:
-  test_backend:
+  test_api_endpoints:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -24,22 +24,39 @@ jobs:
           echo "OPENAI_API_KEY is set: ${{ secrets.OPENAI_API_KEY != '' }}"
           cd backend
           pytest --cov=test_api_endpoints --cov-report=term-missing --cov-fail-under=100 -vv test_api_endpoints.py | tee api_test_results.txt
+      - name: Upload API test results
+        uses: actions/upload-artifact@v4
+        with:
+          name: api-test-results
+          path: backend/api_test_results.txt
+
+  test_prompts:
+    needs: test_api_endpoints
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.9"
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r backend/requirements.txt
       - name: Run prompt tests with coverage
         env:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
         run: |
           cd backend
           pytest --cov=test_prompts --cov-report=term-missing --cov-fail-under=95 -vv test_prompts.py | tee prompt_test_results.txt
-      - name: Upload test results
+      - name: Upload prompt test results
         uses: actions/upload-artifact@v4
         with:
-          name: test-results
-          path: |
-            api_test_results.txt
-            prompt_test_results.txt
+          name: prompt-test-results
+          path: backend/prompt_test_results.txt
 
   deploy:
-    needs: test_backend
+    needs: [test_api_endpoints, test_prompts]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -81,7 +98,7 @@ jobs:
 
             *Test Results:*
             [Download Test Results](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})
-            (Go to the "Artifacts" section and download the "test-results" artifact)
+            (Go to the "Artifacts" section and download the "api-test-results" and "prompt-test-results" artifacts)
 
             [View Action Run](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})
         env:

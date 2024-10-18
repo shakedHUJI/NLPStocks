@@ -43,6 +43,7 @@ export default function StockGraph({
   const [selectionStart, setSelectionStart] = useState<any>(null)
   const [mode, setMode] = useState<"zoom" | "difference" | "view">("difference")
   const [isInteracting, setIsInteracting] = useState(false)
+  const [graphWidth, setGraphWidth] = useState(0)
 
   const getGraphTitle = () => {
     if (compareMode) {
@@ -110,26 +111,36 @@ export default function StockGraph({
   useEffect(() => {
     const chartElement = chartRef.current
     if (chartElement) {
+      let startX: number
       let startY: number
 
       const handleTouchStart = (e: TouchEvent) => {
+        startX = e.touches[0].clientX
         startY = e.touches[0].clientY
+        setGraphWidth(chartElement.offsetWidth)
       }
 
       const handleTouchMove = (e: TouchEvent) => {
-        if (isInteracting) {
-          e.preventDefault()
-          return
-        }
+        if (mode === "view") return
 
+        const currentX = e.touches[0].clientX
         const currentY = e.touches[0].clientY
-        const deltaY = startY - currentY
+        const deltaX = Math.abs(startX - currentX)
+        const deltaY = Math.abs(startY - currentY)
 
-        if (Math.abs(deltaY) > 10) {
-          // Allow scrolling if the user has moved their finger more than 10px
+        // Calculate the selection width as a percentage of the graph width
+        const selectionWidthPercentage = (deltaX / graphWidth) * 100
+
+        if (selectionWidthPercentage < 10) {
+          // Allow scrolling if the selection is less than 10% of the graph width
           e.stopPropagation()
         } else {
           e.preventDefault()
+        }
+
+        // If vertical movement is significantly larger than horizontal, allow scrolling
+        if (deltaY > deltaX * 1.5) {
+          e.stopPropagation()
         }
       }
 
@@ -141,7 +152,7 @@ export default function StockGraph({
         chartElement.removeEventListener("touchmove", handleTouchMove)
       }
     }
-  }, [isInteracting])
+  }, [mode, graphWidth])
 
   return (
     <Card className="min-w-[300px] w-full relative">

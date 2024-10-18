@@ -77,12 +77,12 @@ export default function EnhancedStockSearch() {
   return (
     <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
       <TooltipProvider>
-        <div className="min-h-screen p-4 sm:p-8 transition-colors duration-200 bg-gradient-to-br from-gray-300 via-gray-350 to-gray-300 dark:from-gray-900 dark:via-gray-600 dark:to-gray-800 overflow-x-hidden">
+        <div className="min-h-screen p-4 sm:p-8 transition-colors duration-200 bg-gradient-to-br from-gray-300 via-gray-350 to-gray-300 dark:from-gray-900 dark:via-gray-600 dark:to-gray-800 overflow-x-hidden flex items-center justify-center">
           <motion.div
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5 }}
-            className="max-w-full sm:max-w-5xl mx-auto"
+            className="w-full max-w-5xl mx-auto p-8 rounded-lg"
           >
             {/* Header */}
             <div className="flex justify-center items-center mb-10 mt-4 relative">

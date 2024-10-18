@@ -21,10 +21,13 @@ jobs:
         env:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
         run: |
+          set -e
           echo "OPENAI_API_KEY is set: ${{ secrets.OPENAI_API_KEY != '' }}"
           cd backend
           pytest -vv test_api_endpoints.py | tee api_test_results.txt
+          if [ ${PIPESTATUS[0]} -ne 0 ]; then exit 1; fi
       - name: Upload API test results
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: api-test-results
@@ -47,9 +50,12 @@ jobs:
         env:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
         run: |
+          set -e
           cd backend
           pytest --cov=test_prompts --cov-report=term-missing --cov-fail-under=95 -vv test_prompts.py | tee prompt_test_results.txt
+          if [ ${PIPESTATUS[0]} -ne 0 ]; then exit 1; fi
       - name: Upload prompt test results
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: prompt-test-results
@@ -70,37 +76,40 @@ jobs:
           flyctl deploy --remote-only
 
   notify_slack:
-    needs: deploy
+    if: always()
     runs-on: ubuntu-latest
+    needs: [test_api_endpoints, test_prompts, deploy]
     steps:
+      - name: Check job status
+        id: check_status
+        run: |
+          if [[ "${{ needs.test_api_endpoints.result }}" == "failure" || "${{ needs.test_prompts.result }}" == "failure" ]]; then
+            echo "status=Tests Failed" >> $GITHUB_OUTPUT
+            echo "emoji=:x:" >> $GITHUB_OUTPUT
+          elif [[ "${{ needs.deploy.result }}" == "failure" ]]; then
+            echo "status=Deployment Failed" >> $GITHUB_OUTPUT
+            echo "emoji=:warning:" >> $GITHUB_OUTPUT
+          elif [[ "${{ needs.deploy.result }}" == "success" ]]; then
+            echo "status=Deployment Successful" >> $GITHUB_OUTPUT
+            echo "emoji=:white_check_mark:" >> $GITHUB_OUTPUT
+          else
+            echo "status=Process Incomplete" >> $GITHUB_OUTPUT
+            echo "emoji=:question:" >> $GITHUB_OUTPUT
+          fi
+
       - name: Send Slack Notification
         uses: 8398a7/action-slack@v3
         with:
-          status: ${{ job.status }}
-          author_name: GitHub Actions
-          mention: here
-          if_mention: failure,cancelled
-          job_name: ${{ job.job }}
-          channel: deployments
-          icon_emoji: ":rocket:"
-          username: DeployBot
-          text: |
-            Deployment to Fly.io ${{ job.status == 'success' && 'completed successfully! :white_check_mark:' || 'failed! :x:' }}
-
-            *Repository:* ${{ github.repository }}
-            *Branch:* ${{ github.ref_name }}
-            *Commit:* ${{ github.sha }}
-            *Author:* ${{ github.actor }}
-            *Commit Message:* ${{ github.event.head_commit.message }}
-
-            *Workflow:* ${{ github.workflow }}
-            *Run ID:* ${{ github.run_id }}
-
-            *Test Results:*
-            [Download Test Results](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})
-            (Go to the "Artifacts" section and download the "api-test-results" and "prompt-test-results" artifacts)
-
-            [View Action Run](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})
+          status: custom
+          fields: repo,message,commit,author,action,eventName,ref,workflow
+          custom_payload: |
+            {
+              "attachments": [{
+                "color": "${{ steps.check_status.outputs.status == 'Deployment Successful' && 'good' || 'danger' }}",
+                "text": "${{ steps.check_status.outputs.emoji }} ${{ steps.check_status.outputs.status }}\n\n*Repository:* ${{ github.repository }}\n*Branch:* ${{ github.ref_name }}\n*Commit:* ${{ github.sha }}\n*Author:* ${{ github.actor }}\n*Commit Message:* ${{ github.event.head_commit.message }}\n\n*Workflow:* ${{ github.workflow }}\n*Run ID:* ${{ github.run_id }}\n\n*Test Results:*\n[Download Test Results](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})\n(Go to the \"Artifacts\" section and download the \"api-test-results\" and \"prompt-test-results\" artifacts)\n\n[View Action Run](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})",
+                "footer": "Powered by GitHub Actions"
+              }]
+            }
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}

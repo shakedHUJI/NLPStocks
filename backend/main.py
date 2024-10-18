@@ -152,6 +152,7 @@ async def process_query(request: QueryRequest):
                         "- 'description' (a brief explanation of your analysis approach)\n"
                         "- 'keyDates' (array of objects with 'date', 'description', and 'symbol' fields for significant events)\n\n"
                         "Note: The 'keyDates' array is very important. It should contain dates that are significant for the stock's performance. This could include earnings release dates, major company announcements, or notable market events. If the user asks to see the stock in reference to something, mark those dates and related dates as key dates.\n"
+                        "For example, if the user asks for insight about tesla car releases, you should include the key dates for tesla car releases in the keyDates array."
                         "Available metrics include: marketCap, trailingPE, forwardPE, dividendYield, beta, fiftyTwoWeekHigh, fiftyDayAverage, twoHundredDayAverage, averageVolume, regularMarketPrice, regularMarketDayHigh, regularMarketDayLow, totalCash, totalCashPerShare, debtToEquity, returnOnEquity, freeCashflow, operatingCashflow, earningsGrowth, revenueGrowth, grossMargins, operatingMargins, profitMargins, bookValue, priceToBook, earningsQuarterlyGrowth, netIncomeToCommon, trailingEps, forwardEps, pegRatio, enterpriseToRevenue, enterpriseToEbitda, 52WeekChange, SandP52WeekChange, lastDividendValue, lastDividendDate.\n"
                         "Ensure your response is a valid JSON object without any additional formatting."
                     ),

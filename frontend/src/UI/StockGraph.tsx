@@ -1,4 +1,4 @@
-import React, { useRef, useState, useCallback } from "react";
+import React, { useRef, useState } from "react";
 import {
   AreaChart,
   Area,
@@ -11,123 +11,35 @@ import {
   ReferenceDot,
   Legend,
 } from "recharts";
-import { TrendingUp, ZoomIn, GitCompare, Eye } from "lucide-react";
+import { TrendingUp } from "lucide-react";
 import CustomTooltip from "../components/CustomTooltip";
-import { motion, AnimatePresence } from "framer-motion";
-import { Button } from "./button.tsx";
-import { Card, CardHeader, CardTitle, CardContent, CardFooter } from "./card.tsx";
+import ModeSelector from "../components/ModeSelector.tsx";
+import { Card, CardHeader, CardTitle, CardContent } from "./card.tsx";
 
+/**
+ * Props for the StockGraph component
+ */
 interface StockGraphProps {
-  stockData: any[];
-  stockSymbols: string[];
-  colorMap: { [key: string]: string };
-  description: string;
-  keyDates: any[];
-  compareMode: boolean;
-  zoomState: any;
-  setZoomState: React.Dispatch<React.SetStateAction<any>>;
-  handleZoom: () => void;
-  handleDoubleClick: (event: React.MouseEvent) => void;
-  onClose: () => void;
-  theme: string;
-  isDifferenceMode: boolean;
-  toggleDifferenceMode: () => void;
+  stockData: any[]; // Array of stock data points
+  stockSymbols: string[]; // Array of stock symbols to display
+  colorMap: { [key: string]: string }; // Map of stock symbols to colors
+  description: string; // Description of the graph
+  keyDates: any[]; // Array of key dates to highlight on the graph
+  compareMode: boolean; // Whether the graph is in compare mode
+  zoomState: any; // Current zoom state of the graph
+  setZoomState: React.Dispatch<React.SetStateAction<any>>; // Function to update zoom state
+  handleZoom: () => void; // Function to handle zoom action
+  handleDoubleClick: (event: React.MouseEvent) => void; // Function to handle double click
+  onClose: () => void; // Function to close the graph
+  theme: string; // Current theme (light/dark)
+  isDifferenceMode: boolean; // Whether the graph is in difference mode
+  toggleDifferenceMode: () => void; // Function to toggle difference mode
 }
 
-const ModeSelector = ({ mode, setMode }) => {
-  const [isOpen, setIsOpen] = useState(false);
-  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const containerRef = useRef<HTMLDivElement>(null);
-
-  const modes = [
-    { name: "zoom", Icon: ZoomIn },
-    { name: "difference", Icon: GitCompare },
-    { name: "view", Icon: Eye },
-  ];
-
-  const CurrentIcon = modes.find(m => m.name === mode)?.Icon || ZoomIn;
-
-  const handleMouseEnter = useCallback(() => {
-    if (timeoutRef.current) {
-      clearTimeout(timeoutRef.current);
-    }
-    setIsOpen(true);
-  }, []);
-
-  const handleMouseLeave = useCallback((e: React.MouseEvent) => {
-    const container = containerRef.current;
-    const relatedTarget = e.relatedTarget as Node;
-
-    if (container && !container.contains(relatedTarget)) {
-      timeoutRef.current = setTimeout(() => {
-        setIsOpen(false);
-      }, 300);
-    }
-  }, []);
-
-  return (
-    <div className="relative" ref={containerRef}>
-      <motion.div
-        className="relative z-50 flex justify-center"
-        onMouseEnter={handleMouseEnter}
-        onMouseLeave={handleMouseLeave}
-      >
-        <motion.div
-          className="p-2 rounded-full text-primary-foreground shadow-lg"
-          whileHover={{ scale: 1.1 }}
-          whileTap={{ scale: 0.9 }}
-        >
-          <AnimatePresence mode="wait">
-            <motion.div
-              key={mode}
-              initial={{ opacity: 0, scale: 0.8 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.8 }}
-              transition={{ duration: 0.2 }}
-            >
-              <CurrentIcon size={24} />
-            </motion.div>
-          </AnimatePresence>
-        </motion.div>
-        <AnimatePresence>
-          {isOpen && (
-            <motion.div
-              initial={{ opacity: 0, y: -20 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -20 }}
-              transition={{ duration: 0.2 }}
-              className="absolute top-full rounded-lg p-2 flex flex-col space-y-2"
-              onMouseEnter={handleMouseEnter}
-              onMouseLeave={handleMouseLeave}
-            >
-              {modes.filter(m => m.name !== mode).map(({ name, Icon }) => (
-                <motion.button
-                  key={name}
-                  className="p-2 rounded-full text-secondary-foreground w-full"
-                  whileHover={{ scale: 1.1 }}
-                  whileTap={{ scale: 0.9 }}
-                  onClick={() => setMode(name)}
-                >
-                  <AnimatePresence mode="wait">
-                    <motion.div
-                      key={name}
-                      initial={{ opacity: 0, scale: 0.8 }}
-                      animate={{ opacity: 1, scale: 1 }}
-                      exit={{ opacity: 0, scale: 0.8 }}
-                      transition={{ duration: 0.2 }}
-                    >
-                      <Icon size={20} />
-                    </motion.div>
-                  </AnimatePresence>
-                </motion.button>
-              ))}
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </motion.div>
-    </div>
-  );
-};
+/**
+ * StockGraph component for displaying stock data
+ * @param props StockGraphProps
+ */
 const StockGraph: React.FC<StockGraphProps> = ({
   stockData,
   stockSymbols,
@@ -144,6 +56,9 @@ const StockGraph: React.FC<StockGraphProps> = ({
   const [selectionStart, setSelectionStart] = useState<any>(null);
   const [mode, setMode] = useState<"zoom" | "difference" | "view">("difference");
 
+  /**
+   * Get the title for the graph based on the current mode and stock symbols
+   */
   const getGraphTitle = () => {
     if (compareMode) {
       return `${stockSymbols.join(" vs ")} Comparison`;
@@ -154,6 +69,9 @@ const StockGraph: React.FC<StockGraphProps> = ({
     }
   };
 
+  /**
+   * Handle the start of a selection on the graph
+   */
   const handleSelectionStart = (e: any) => {
     if (!e || mode === "view") return;
     const { activeLabel, activePayload } = e;
@@ -166,6 +84,9 @@ const StockGraph: React.FC<StockGraphProps> = ({
     }
   };
 
+  /**
+   * Handle the movement during a selection on the graph
+   */
   const handleSelectionMove = (e: any) => {
     if (!e || mode === "view") return;
     const { activeLabel } = e;
@@ -177,6 +98,9 @@ const StockGraph: React.FC<StockGraphProps> = ({
     }
   };
 
+  /**
+   * Handle the end of a selection on the graph
+   */
   const handleSelectionEnd = () => {
     if (mode === "view") return;
     if (mode === "difference") {
@@ -191,6 +115,9 @@ const StockGraph: React.FC<StockGraphProps> = ({
     }));
   };
 
+  /**
+   * Toggle between different graph modes (zoom, difference, view)
+   */
   const toggleMode = (e: React.MouseEvent) => {
     e.preventDefault(); // Prevent the default right-click menu
     setMode((prevMode) => {
@@ -234,6 +161,7 @@ const StockGraph: React.FC<StockGraphProps> = ({
               onTouchMove={handleSelectionMove}
               onTouchEnd={handleSelectionEnd}
             >
+              {/* Define gradients for each stock symbol */}
               <defs>
                 {stockSymbols.map((symbol) => (
                   <linearGradient
@@ -258,6 +186,7 @@ const StockGraph: React.FC<StockGraphProps> = ({
                 ))}
               </defs>
               <CartesianGrid strokeDasharray="3 3" stroke="#ccc" />
+              {/* X-axis configuration */}
               <XAxis
                 dataKey="date"
                 stroke={theme === "dark" ? "#fff" : "#888"}
@@ -282,12 +211,14 @@ const StockGraph: React.FC<StockGraphProps> = ({
                 allowDataOverflow
                 domain={["dataMin", "dataMax"]}
               />
+              {/* Y-axis configuration */}
               <YAxis
                 stroke={theme === "dark" ? "#fff" : "#888"}
                 style={{ fontSize: "0.6rem" }}
                 width={40}
                 allowDataOverflow
               />
+              {/* Custom tooltip */}
               <RechartsTooltip
                 content={({ active, payload, label }) => (
                   <CustomTooltip
@@ -302,6 +233,7 @@ const StockGraph: React.FC<StockGraphProps> = ({
                   />
                 )}
               />
+              {/* Legend configuration */}
               <Legend
                 verticalAlign="bottom"
                 height={36}
@@ -315,6 +247,7 @@ const StockGraph: React.FC<StockGraphProps> = ({
                   <span style={{ color: colorMap[value] }}>{value}</span>
                 )}
               />
+              {/* Render area for each stock symbol */}
               {stockSymbols.map((symbol) => (
                 <Area
                   key={symbol}
@@ -325,6 +258,7 @@ const StockGraph: React.FC<StockGraphProps> = ({
                   fill={`url(#color${symbol})`}
                 />
               ))}
+              {/* Render key date markers */}
               {keyDates.map((keyDate, index) => {
                 const dataPoint = stockData.find(
                   (item) => item.date === keyDate.date
@@ -341,6 +275,7 @@ const StockGraph: React.FC<StockGraphProps> = ({
                   />
                 ) : null;
               })}
+              {/* Render selection area for zooming */}
               {zoomState.refAreaLeft && zoomState.refAreaRight ? (
                 <ReferenceArea
                   x1={zoomState.refAreaLeft}

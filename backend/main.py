@@ -73,6 +73,9 @@ async def get_stock_metrics(symbols: str = Query(...), metrics: str = Query(...)
             stock = yf.Ticker(symbol)
             info = stock.info
 
+            if not info:
+                raise ValueError(f"No data available for symbol: {symbol}")
+
             symbol_metrics = {}
             for metric in metric_list:
                 if metric in info:
@@ -88,6 +91,9 @@ async def get_stock_metrics(symbols: str = Query(...), metrics: str = Query(...)
             
             result[symbol] = symbol_metrics
             logging.info(f"Successfully fetched metrics for {symbol}")
+        except ValueError as ve:
+            logging.error(f"Error fetching metrics for {symbol}: {str(ve)}")
+            raise HTTPException(status_code=404, detail=str(ve))
         except Exception as e:
             logging.error(f"Error fetching metrics for {symbol}: {str(e)}")
             logging.debug(traceback.format_exc())

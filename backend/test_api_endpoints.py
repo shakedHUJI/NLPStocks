@@ -57,15 +57,15 @@ def test_invalid_stock_symbol():
 def test_get_stock_metrics_invalid_symbol():
     """
     Test the /api/stock_metrics endpoint with an invalid stock symbol.
-    
+
     Ensures that the endpoint handles invalid stock symbols gracefully,
-    returning an appropriate error message.
+    returning an appropriate error message with a 404 status code.
     """
     response = client.get("/api/stock_metrics?symbols=INVALID&metrics=marketCap,trailingPE")
-    assert response.status_code == 500
+    assert response.status_code == 404
     data = response.json()
     assert "detail" in data
-    assert "Error fetching metrics for INVALID" in data["detail"]
+    assert "No data available for symbol: INVALID" in data["detail"]
 
 def test_get_stock_news_invalid_symbol():
     """

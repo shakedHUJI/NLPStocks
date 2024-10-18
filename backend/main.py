@@ -22,7 +22,7 @@ app.add_middleware(
         "https://stockchat.co",
         "https://www.stockchat.co",
         "http://localhost:3000",
-        "http://192.168.1.177", # TODO: remove local IP's
+        "http://192.168.1.*", # TODO: remove local IP's
     ],
     allow_credentials=True,
     allow_methods=["*"],

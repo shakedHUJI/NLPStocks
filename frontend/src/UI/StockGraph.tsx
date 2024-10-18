@@ -135,14 +135,16 @@ const StockGraph: React.FC<StockGraphProps> = ({
   return (
     <Card className="min-w-[300px] w-full relative">
       <CardHeader>
-        <CardTitle className="flex items-center justify-between flex-wrap">
+        <CardTitle className="flex items-center justify-between flex-wrap pr-12">
           <div className="flex items-center mb-2 sm:mb-0">
             <TrendingUp className="mr-2 h-6 w-6 text-primary" />
             {getGraphTitle()}
           </div>
-          <ModeSelector mode={mode} setMode={setMode} />
         </CardTitle>
       </CardHeader>
+      <div className="absolute top-4 right-4 z-10">
+        <ModeSelector mode={mode} setMode={setMode} />
+      </div>
       <CardContent>
         <div
           className="w-full h-[50vh] min-h-[400px] max-h-[600px] select-none"

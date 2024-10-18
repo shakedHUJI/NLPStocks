@@ -47,14 +47,14 @@ const ModeSelector: React.FC<ModeSelectorProps> = ({ mode, setMode }) => {
   }, [setMode]);
 
   return (
-    <div className="relative" ref={containerRef}>
+    <div className="relative">
       <motion.div
         className="relative z-50 flex justify-center"
         onMouseEnter={handleMouseEnter}
         onMouseLeave={handleMouseLeave}
       >
         <motion.div
-          className="p-2 rounded-full text-primary-foreground shadow-lg"
+          className="p-2 rounded-full text-primary-foreground shadow-lg bg-background"
           whileHover={{ scale: 1.1 }}
           whileTap={{ scale: 0.9 }}
         >
@@ -77,7 +77,7 @@ const ModeSelector: React.FC<ModeSelectorProps> = ({ mode, setMode }) => {
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -20 }}
               transition={{ duration: 0.2 }}
-              className="absolute top-full rounded-lg p-2 flex flex-col space-y-2"
+              className="absolute top-full right-0 mt-2 rounded-lg p-2 flex flex-col space-y-2 bg-background shadow-lg"
               onMouseEnter={handleMouseEnter}
               onMouseLeave={handleMouseLeave}
             >

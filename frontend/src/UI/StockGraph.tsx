@@ -1,4 +1,4 @@
-import React, { useRef, useState } from "react";
+import React, { useRef, useState, useEffect } from "react";
 import {
   AreaChart,
   Area,
@@ -131,6 +131,21 @@ const StockGraph: React.FC<StockGraphProps> = ({
       }
     });
   };
+
+  useEffect(() => {
+    const chartElement = chartRef.current;
+    if (chartElement) {
+      const preventScroll = (e: TouchEvent) => {
+        e.preventDefault();
+      };
+      
+      chartElement.addEventListener('touchmove', preventScroll, { passive: false });
+      
+      return () => {
+        chartElement.removeEventListener('touchmove', preventScroll);
+      };
+    }
+  }, []);
 
   return (
     <Card className="min-w-[300px] w-full relative">

@@ -146,7 +146,6 @@ export default function EnhancedStockSearch() {
               </div>
             </form>
 
-            {/* Rest of the component remains unchanged */}
             {/* Example prompts */}
             {!hasSearched && (
               <motion.div

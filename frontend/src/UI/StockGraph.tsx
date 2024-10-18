@@ -16,141 +16,132 @@ import CustomTooltip from "../components/CustomTooltip";
 import ModeSelector from "../components/ModeSelector.tsx";
 import { Card, CardHeader, CardTitle, CardContent } from "./card.tsx";
 
-/**
- * Props for the StockGraph component
- */
-interface StockGraphProps {
-  stockData: any[]; // Array of stock data points
-  stockSymbols: string[]; // Array of stock symbols to display
-  colorMap: { [key: string]: string }; // Map of stock symbols to colors
-  description: string; // Description of the graph
-  keyDates: any[]; // Array of key dates to highlight on the graph
-  compareMode: boolean; // Whether the graph is in compare mode
-  zoomState: any; // Current zoom state of the graph
-  setZoomState: React.Dispatch<React.SetStateAction<any>>; // Function to update zoom state
-  handleZoom: () => void; // Function to handle zoom action
-  handleDoubleClick: (event: React.MouseEvent) => void; // Function to handle double click
-  onClose: () => void; // Function to close the graph
-  theme: string; // Current theme (light/dark)
-  isDifferenceMode: boolean; // Whether the graph is in difference mode
-  toggleDifferenceMode: () => void; // Function to toggle difference mode
-}
+// At the top of the file, add these type definitions
+type ZoomState = {
+  refAreaLeft?: string;
+  refAreaRight?: string;
+};
 
-/**
- * StockGraph component for displaying stock data
- * @param props StockGraphProps
- */
-const StockGraph: React.FC<StockGraphProps> = ({
-  stockData,
-  stockSymbols,
-  colorMap,
-  keyDates,
-  compareMode,
-  zoomState,
-  setZoomState,
-  handleZoom,
-  handleDoubleClick,
-  theme,
-}) => {
-  const chartRef = useRef<any>(null);
-  const [selectionStart, setSelectionStart] = useState<any>(null);
-  const [mode, setMode] = useState<"zoom" | "difference" | "view">("difference");
-  const [isInteracting, setIsInteracting] = useState(false);
+type KeyDate = {
+  date: string;
+  symbol: string;
+};
 
-  /**
-   * Get the title for the graph based on the current mode and stock symbols
-   */
+export default function StockGraph({
+  stockData = [],
+  stockSymbols = [],
+  colorMap = {},
+  keyDates = [] as KeyDate[],
+  compareMode = false,
+  zoomState = {} as ZoomState,
+  setZoomState = (state: ZoomState | ((prevState: ZoomState) => ZoomState)) => {},
+  handleZoom = () => {},
+  handleDoubleClick = () => {},
+  theme = "light",
+}) {
+  const chartRef = useRef<HTMLDivElement>(null)
+  const [selectionStart, setSelectionStart] = useState<any>(null)
+  const [mode, setMode] = useState<"zoom" | "difference" | "view">("difference")
+  const [isInteracting, setIsInteracting] = useState(false)
+
   const getGraphTitle = () => {
     if (compareMode) {
-      return `${stockSymbols.join(" vs ")} Comparison`;
+      return `${stockSymbols.join(" vs ")} Comparison`
     } else {
       return stockSymbols.length === 1
         ? `${stockSymbols[0]} Stock Performance`
-        : `${stockSymbols.join(", ")} Stock Performance`;
+        : `${stockSymbols.join(", ")} Stock Performance`
     }
-  };
+  }
 
-  /**
-   * Handle the start of a selection on the graph
-   */
   const handleSelectionStart = (e: any) => {
-    if (!e || mode === "view") return;
-    setIsInteracting(true);
-    const { activeLabel, activePayload } = e;
+    if (!e || mode === "view") return
+    const { activeLabel, activePayload } = e
     if (activeLabel && activePayload) {
-      setSelectionStart({ date: activeLabel, values: activePayload });
-      setZoomState((prev) => ({
+      setSelectionStart({ date: activeLabel, values: activePayload })
+      setZoomState((prev: ZoomState) => ({
         ...prev,
         refAreaLeft: activeLabel,
-      }));
+      }))
     }
-  };
+    setIsInteracting(true)
+  }
 
-  /**
-   * Handle the movement during a selection on the graph
-   */
   const handleSelectionMove = (e: any) => {
-    if (!e || mode === "view") return;
-    const { activeLabel } = e;
+    if (!e || mode === "view") return
+    const { activeLabel } = e
     if (activeLabel) {
-      setZoomState((prev) => ({
+      setZoomState((prev: ZoomState) => ({
         ...prev,
         refAreaRight: activeLabel,
-      }));
+      }))
     }
-  };
+  }
 
-  /**
-   * Handle the end of a selection on the graph
-   */
   const handleSelectionEnd = () => {
-    setIsInteracting(false);
-    if (mode === "view") return;
+    if (mode === "view") return
     if (mode === "difference") {
-      setSelectionStart(null);
+      setSelectionStart(null)
     } else if (mode === "zoom") {
-      handleZoom();
+      handleZoom()
     }
-    setZoomState((prev) => ({
+    setZoomState((prev: ZoomState) => ({
       ...prev,
-      refAreaLeft: "",
-      refAreaRight: "",
-    }));
-  };
+      refAreaLeft: undefined,
+      refAreaRight: undefined,
+    }))
+    setIsInteracting(false)
+  }
 
-  /**
-   * Toggle between different graph modes (zoom, difference, view)
-   */
   const toggleMode = (e: React.MouseEvent) => {
-    e.preventDefault(); // Prevent the default right-click menu
+    e.preventDefault()
     setMode((prevMode) => {
       switch (prevMode) {
         case "zoom":
-          return "difference";
+          return "difference"
         case "difference":
-          return "view";
+          return "view"
         case "view":
-          return "zoom";
+          return "zoom"
       }
-    });
-  };
+    })
+  }
 
   useEffect(() => {
-    const chartElement = chartRef.current;
+    const chartElement = chartRef.current
     if (chartElement) {
-      const preventScroll = (e: TouchEvent) => {
+      let startY: number
+
+      const handleTouchStart = (e: TouchEvent) => {
+        startY = e.touches[0].clientY
+      }
+
+      const handleTouchMove = (e: TouchEvent) => {
         if (isInteracting) {
-          e.preventDefault();
+          e.preventDefault()
+          return
         }
-      };
-      
-      chartElement.addEventListener('touchmove', preventScroll, { passive: false });
-      
+
+        const currentY = e.touches[0].clientY
+        const deltaY = startY - currentY
+
+        if (Math.abs(deltaY) > 10) {
+          // Allow scrolling if the user has moved their finger more than 10px
+          e.stopPropagation()
+        } else {
+          e.preventDefault()
+        }
+      }
+
+      chartElement.addEventListener("touchstart", handleTouchStart, { passive: false })
+      chartElement.addEventListener("touchmove", handleTouchMove, { passive: false })
+
       return () => {
-        chartElement.removeEventListener('touchmove', preventScroll);
-      };
+        chartElement.removeEventListener("touchstart", handleTouchStart)
+        chartElement.removeEventListener("touchmove", handleTouchMove)
+      }
     }
-  }, [isInteracting]);
+  }, [isInteracting])
 
   return (
     <Card className="min-w-[300px] w-full relative">
@@ -171,11 +162,6 @@ const StockGraph: React.FC<StockGraphProps> = ({
           onDoubleClick={handleDoubleClick}
           onContextMenu={toggleMode}
           ref={chartRef}
-          onMouseDown={() => setIsInteracting(true)}
-          onMouseUp={() => setIsInteracting(false)}
-          onMouseLeave={() => setIsInteracting(false)}
-          onTouchStart={() => setIsInteracting(true)}
-          onTouchEnd={() => setIsInteracting(false)}
         >
           <ResponsiveContainer width="100%" height="100%">
             <AreaChart
@@ -285,7 +271,7 @@ const StockGraph: React.FC<StockGraphProps> = ({
               {/* Render key date markers */}
               {keyDates.map((keyDate, index) => {
                 const dataPoint = stockData.find(
-                  (item) => item.date === keyDate.date
+                  (item: any) => item.date === keyDate.date
                 );
                 return dataPoint ? (
                   <ReferenceDot
@@ -315,6 +301,4 @@ const StockGraph: React.FC<StockGraphProps> = ({
       </CardContent>
     </Card>
   );
-};
-
-export default StockGraph;
+}

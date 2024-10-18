@@ -78,6 +78,29 @@ export default function EnhancedStockSearch() {
     <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
       <TooltipProvider>
         <div className="min-h-screen p-4 sm:p-8 transition-colors duration-200 bg-gradient-to-br from-gray-300 via-gray-350 to-gray-300 dark:from-gray-900 dark:via-gray-600 dark:to-gray-800 overflow-x-hidden flex items-center justify-center">
+          {/* Theme toggle button */}
+          <div className="absolute top-4 right-4 z-50">
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    onClick={toggleTheme}
+                    className="rounded-full"
+                  >
+                    <Sun className="h-[1.2rem] w-[1.2rem] rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
+                    <Moon className="absolute h-[1.2rem] w-[1.2rem] rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
+                    <span className="sr-only">Toggle theme</span>
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>Toggle theme</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          </div>
+
           <motion.div
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -85,7 +108,7 @@ export default function EnhancedStockSearch() {
             className="w-full max-w-5xl mx-auto p-8 rounded-lg"
           >
             {/* Header */}
-            <div className="flex justify-center items-center mb-10 mt-4 relative">
+            <div className="flex justify-center items-center mb-10 mt-4">
               <motion.h1
                 initial={{ x: -20 }}
                 animate={{ x: 0 }}
@@ -94,25 +117,6 @@ export default function EnhancedStockSearch() {
               >
                 Stock Chat
               </motion.h1>
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button
-                      variant="outline"
-                      size="icon"
-                      onClick={toggleTheme}
-                      className="rounded-full absolute top-0 right-0"
-                    >
-                      <Sun className="h-[1.2rem] w-[1.2rem] rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
-                      <Moon className="absolute h-[1.2rem] w-[1.2rem] rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
-                      <span className="sr-only">Toggle theme</span>
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <p>Toggle theme</p>
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
             </div>
 
             {/* Search form */}

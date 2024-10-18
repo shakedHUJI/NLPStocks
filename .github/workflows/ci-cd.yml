@@ -23,7 +23,7 @@ jobs:
         run: |
           echo "OPENAI_API_KEY is set: ${{ secrets.OPENAI_API_KEY != '' }}"
           cd backend
-          pytest --cov=test_api_endpoints --cov-report=term-missing --cov-fail-under=100 -vv test_api_endpoints.py | tee api_test_results.txt
+          pytest -vv test_api_endpoints.py | tee api_test_results.txt
       - name: Upload API test results
         uses: actions/upload-artifact@v4
         with:

@@ -159,9 +159,6 @@ const StockGraph: React.FC<StockGraphProps> = ({
               onMouseDown={handleSelectionStart}
               onMouseMove={handleSelectionMove}
               onMouseUp={handleSelectionEnd}
-              onTouchStart={handleSelectionStart}
-              onTouchMove={handleSelectionMove}
-              onTouchEnd={handleSelectionEnd}
             >
               {/* Define gradients for each stock symbol */}
               <defs>

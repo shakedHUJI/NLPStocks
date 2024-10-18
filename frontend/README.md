@@ -1,6 +1,6 @@
-# NLP Stock Insights
+# Stock Chat
 
-NLP Stock Insights is an innovative web application that allows users to analyze stock performance using natural language queries. By leveraging AI and natural language processing, this app provides an intuitive interface for users to ask questions about stocks and receive insights in the form of interactive graphs and detailed financial metrics.
+Stock Chat is a web application that allows users to analyze stock performance using natural language queries. By leveraging AI and natural language processing, this app provides an intuitive interface for users to ask questions about stocks and receive insights in the form of interactive graphs and detailed financial metrics.
 
 ## Features
 

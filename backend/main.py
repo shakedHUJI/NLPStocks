@@ -18,7 +18,12 @@ app = FastAPI()
 # Add CORS middleware
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["https://stockchat.co", "https://www.stockchat.co", "http://localhost:3000"], # TODO: remove localhost 
+    allow_origins=[
+        "https://stockchat.co",
+        "https://www.stockchat.co",
+        "http://localhost:3000",
+        "http://192.168.1.177", # TODO: remove local IP's
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

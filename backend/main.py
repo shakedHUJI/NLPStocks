@@ -49,13 +49,11 @@ async def get_stock_data(symbols: str = Query(...), start_date: str = Query(...)
                 data[symbol] = {"error": "No data available for this symbol"}
             else:
                 data[symbol] = hist['Close'].to_dict()
-                # Convert dates to string format
                 data[symbol] = {date.strftime('%Y-%m-%d'): price for date, price in data[symbol].items()}
-            logging.info(f"Successfully fetched data for {symbol}: {len(data[symbol])} data points")
         except Exception as e:
             logging.error(f"Error fetching data for {symbol}: {str(e)}")
             logging.debug(traceback.format_exc())
-            data[symbol] = {"error": str(e)}
+            raise HTTPException(status_code=500, detail=f"Error fetching data for {symbol}: {str(e)}")
 
     logging.info(f"Returning data for {len(data)} symbols")
     return data
@@ -91,7 +89,7 @@ async def get_stock_metrics(symbols: str = Query(...), metrics: str = Query(...)
         except Exception as e:
             logging.error(f"Error fetching metrics for {symbol}: {str(e)}")
             logging.debug(traceback.format_exc())
-            result[symbol] = {"error": str(e)}
+            raise HTTPException(status_code=500, detail=f"Error fetching metrics for {symbol}: {str(e)}")
 
     logging.info(f"Returning metrics for {len(result)} symbols")
     return result
@@ -165,7 +163,6 @@ async def process_query(request: QueryRequest):
 async def get_stock_news(symbol: str = Query(...)):
     logging.info(f"Received news request for symbol: {symbol}")
     if not symbol:
-        logging.warning("No symbol provided for news request")
         raise HTTPException(status_code=400, detail="No symbol provided")
 
     try:

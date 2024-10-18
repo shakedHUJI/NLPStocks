@@ -49,10 +49,48 @@ def test_invalid_stock_symbol():
     returning an error message in the response.
     """
     response = client.get("/api/stock_data?symbols=INVALID&start_date=2023-01-01&end_date=2023-01-31")
-    assert response.status_code == 200
+    assert response.status_code == 500
     data = response.json()
-    assert "INVALID" in data
-    assert "error" in data["INVALID"]
+    assert "detail" in data
+    assert "Error fetching data for INVALID" in data["detail"]
+
+def test_get_stock_metrics_invalid_symbol():
+    """
+    Test the /api/stock_metrics endpoint with an invalid stock symbol.
+    
+    Ensures that the endpoint handles invalid stock symbols gracefully,
+    returning an appropriate error message.
+    """
+    response = client.get("/api/stock_metrics?symbols=INVALID&metrics=marketCap,trailingPE")
+    assert response.status_code == 500
+    data = response.json()
+    assert "detail" in data
+    assert "Error fetching metrics for INVALID" in data["detail"]
+
+def test_get_stock_news_invalid_symbol():
+    """
+    Test the /api/stock_news endpoint with an invalid stock symbol.
+    
+    Ensures that the endpoint handles invalid stock symbols gracefully,
+    returning an appropriate error message.
+    """
+    response = client.get("/api/stock_news?symbol=INVALID")
+    assert response.status_code == 500
+    data = response.json()
+    assert "detail" in data
+    assert "Failed to fetch news data" in data["detail"]
+
+def test_get_stock_news_missing_symbol():
+    """
+    Test the /api/stock_news endpoint with a missing symbol.
+    
+    Ensures that the endpoint returns a 400 status code when no symbol is provided.
+    """
+    response = client.get("/api/stock_news?symbol=")
+    assert response.status_code == 400
+    data = response.json()
+    assert "detail" in data
+    assert "No symbol provided" in data["detail"]
 
 def test_missing_query():
     """
@@ -153,19 +191,6 @@ def test_get_stock_news_limit():
     assert isinstance(news, list)
     assert len(news) <= 8
 
-def test_get_stock_news_invalid_symbol():
-    """
-    Test the /api/stock_news endpoint with an invalid stock symbol.
-    
-    Ensures that the endpoint handles invalid stock symbols gracefully,
-    returning an appropriate error message.
-    """
-    response = client.get("/api/stock_news?symbol=INVALID")
-    assert response.status_code == 500
-    data = response.json()
-    assert "detail" in data
-    assert "Failed to fetch news data" in data["detail"]
-
 def test_cors_headers():
     """
     Test that CORS headers are properly set.
@@ -176,7 +201,6 @@ def test_cors_headers():
     assert response.status_code == 200
     assert response.headers["access-control-allow-origin"] == "https://stockchat.co"
 
-
 def test_invalid_date_format():
     """
     Test the /api/stock_data endpoint with an invalid date format.
@@ -185,8 +209,7 @@ def test_invalid_date_format():
     returning an appropriate error message.
     """
     response = client.get("/api/stock_data?symbols=AAPL&start_date=invalid_date&end_date=2023-01-31")
-    assert response.status_code == 200
+    assert response.status_code == 500
     data = response.json()
-    assert "AAPL" in data
-    assert "error" in data["AAPL"]
-    assert "invalid date" in data["AAPL"]["error"].lower()
+    assert "detail" in data
+    assert "Error fetching data for AAPL" in data["detail"]

@@ -135,8 +135,8 @@ const StockGraph: React.FC<StockGraphProps> = ({
   return (
     <Card className="min-w-[300px] w-full relative">
       <CardHeader>
-        <CardTitle className="flex items-center justify-between">
-          <div className="flex items-center">
+        <CardTitle className="flex items-center justify-between flex-wrap">
+          <div className="flex items-center mb-2 sm:mb-0">
             <TrendingUp className="mr-2 h-6 w-6 text-primary" />
             {getGraphTitle()}
           </div>
@@ -145,7 +145,7 @@ const StockGraph: React.FC<StockGraphProps> = ({
       </CardHeader>
       <CardContent>
         <div
-          className="w-full h-[400px] select-none"
+          className="w-full h-[50vh] min-h-[400px] max-h-[600px] select-none"
           onDoubleClick={handleDoubleClick}
           onContextMenu={toggleMode}
           ref={chartRef}

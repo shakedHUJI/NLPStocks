@@ -41,6 +41,11 @@ const ModeSelector: React.FC<ModeSelectorProps> = ({ mode, setMode }) => {
     }
   }, []);
 
+  const handleModeChange = useCallback((newMode: "zoom" | "difference" | "view") => {
+    setMode(newMode);
+    setIsOpen(false);
+  }, [setMode]);
+
   return (
     <div className="relative" ref={containerRef}>
       <motion.div
@@ -82,7 +87,7 @@ const ModeSelector: React.FC<ModeSelectorProps> = ({ mode, setMode }) => {
                   className="p-2 rounded-full text-secondary-foreground w-full"
                   whileHover={{ scale: 1.1 }}
                   whileTap={{ scale: 0.9 }}
-                  onClick={() => setMode(name as "zoom" | "difference" | "view")}
+                  onClick={() => handleModeChange(name as "zoom" | "difference" | "view")}
                 >
                   <AnimatePresence mode="wait">
                     <motion.div

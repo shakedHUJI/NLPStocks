@@ -46,10 +46,12 @@ async def get_stock_data(symbols: str = Query(...), start_date: str = Query(...)
             stock = yf.Ticker(symbol)
             hist = stock.history(start=start_date, end=end_date)
             if hist.empty:
-                data[symbol] = {"error": "No data available for this symbol"}
-            else:
-                data[symbol] = hist['Close'].to_dict()
-                data[symbol] = {date.strftime('%Y-%m-%d'): price for date, price in data[symbol].items()}
+                raise HTTPException(status_code=404, detail=f"No data available for symbol: {symbol}")
+            data[symbol] = hist['Close'].to_dict()
+            data[symbol] = {date.strftime('%Y-%m-%d'): price for date, price in data[symbol].items()}
+            logging.info(f"Successfully fetched data for {symbol}: {len(data[symbol])} data points")
+        except HTTPException as he:
+            raise he
         except Exception as e:
             logging.error(f"Error fetching data for {symbol}: {str(e)}")
             logging.debug(traceback.format_exc())

@@ -49,10 +49,10 @@ def test_invalid_stock_symbol():
     returning an error message in the response.
     """
     response = client.get("/api/stock_data?symbols=INVALID&start_date=2023-01-01&end_date=2023-01-31")
-    assert response.status_code == 500
+    assert response.status_code == 404
     data = response.json()
     assert "detail" in data
-    assert "Error fetching data for INVALID" in data["detail"]
+    assert "No data available for symbol: INVALID" in data["detail"]
 
 def test_get_stock_metrics_invalid_symbol():
     """

@@ -82,10 +82,10 @@ export default function EnhancedStockSearch() {
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5 }}
-            className="max-w-full sm:max-w-4xl mx-auto"
+            className="max-w-full sm:max-w-5xl mx-auto"
           >
             {/* Header */}
-            <div className="flex justify-between items-center mb-8 relative">
+            <div className="flex justify-center items-center mb-10 mt-4 relative">
               <motion.h1
                 initial={{ x: -20 }}
                 animate={{ x: 0 }}

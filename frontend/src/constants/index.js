@@ -13,7 +13,7 @@ export const LINE_COLORS = [
 
 export const EXAMPLE_PROMPTS = [
   "How did Apple's stock reacted to all iphone releases?",
-  "Compare AMD and Nvidia and pinpoint earning announcement dates",
-  "What are the key financial metrics for Amazon?",
-  "Show me the latest news for Tesla",
+  "Compare AMD and Nvidia and pinpoint the past 4 earning announcement dates",
+  "Compare the TSLA and GME during 2020-2022",
+  "Show me the latest news and key matrics for Tesla",
 ];

@@ -165,6 +165,7 @@ async def process_query(request: QueryRequest):
                 {"role": "user", "content": query},
             ],
         )
+        
 
         raw_response = completion.choices[0].message.content
         logging.debug(f"Raw response from OpenAI: {raw_response}")

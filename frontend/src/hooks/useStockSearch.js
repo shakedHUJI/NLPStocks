@@ -59,10 +59,10 @@ const useStockSearch = () => {
         for (const action of result.actions) {
           switch (action.type) {
             case "getNews":
-              setLoadingState("Fetching news data");
               await handleFetchNewsData(action.symbols[0]);
               break;
             case "getHistory":
+              setLoadingState("Fetching stock data");
               setStockSymbols(action.symbols);
               setCompareMode(action.type === "compare");
               handleFetchStockData(

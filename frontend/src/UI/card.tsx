@@ -3,6 +3,13 @@ import { cn } from "../lib/utils.ts"
 import { ChevronDown, ChevronUp } from "lucide-react"
 import { motion, AnimatePresence, HTMLMotionProps } from "framer-motion"
 
+/**
+ * A versatile Card component that can be either static or toggleable.
+ * When toggleable, it includes an animation for expanding/collapsing content.
+ * 
+ * @param toggleable - If true, the card can be expanded/collapsed
+ * @param defaultOpen - Initial state of the card when toggleable (default: true)
+ */
 const Card = React.forwardRef<
   HTMLDivElement,
   React.HTMLAttributes<HTMLDivElement> & { toggleable?: boolean; defaultOpen?: boolean }
@@ -20,11 +27,13 @@ const Card = React.forwardRef<
         "rounded-lg border bg-card text-card-foreground shadow-sm",
         className
       ) as any}
+      // Scale up slightly on hover when card is collapsed and toggleable
       whileHover={!isOpen && toggleable ? { scale: 1.02 } : {}}
       transition={{ duration: 0.3 }}
       {...(props as HTMLMotionProps<'div'>)}
     >
       {toggleable ? (
+        // Animated header section for toggleable cards
         <motion.div
           className="flex justify-between items-center cursor-pointer"
           onClick={() => setIsOpen(!isOpen)}
@@ -33,6 +42,7 @@ const Card = React.forwardRef<
           transition={{ duration: 0.3 }}
         >
           {header}
+          {/* Rotating chevron indicator */}
           <motion.div
             initial={{ rotate: 0 }}
             animate={{ rotate: isOpen ? 180 : 0 }}
@@ -45,6 +55,7 @@ const Card = React.forwardRef<
       ) : (
         header
       )}
+      {/* Animated content section with smooth height transition */}
       <AnimatePresence>
         {(!toggleable || isOpen) && (
           <motion.div
@@ -62,6 +73,10 @@ const Card = React.forwardRef<
 })
 Card.displayName = "Card"
 
+/**
+ * Container for the card's header section.
+ * Typically contains CardTitle and optionally CardDescription.
+ */
 const CardHeader = React.forwardRef<
   HTMLDivElement,
   React.HTMLAttributes<HTMLDivElement>
@@ -74,6 +89,10 @@ const CardHeader = React.forwardRef<
 ))
 CardHeader.displayName = "CardHeader"
 
+/**
+ * Main title component for the card.
+ * Renders as an h3 element with appropriate styling.
+ */
 const CardTitle = React.forwardRef<
   HTMLParagraphElement,
   React.HTMLAttributes<HTMLHeadingElement>
@@ -91,6 +110,10 @@ const CardTitle = React.forwardRef<
 ))
 CardTitle.displayName = "CardTitle"
 
+/**
+ * Secondary text component for additional details in the card header.
+ * Typically used below the CardTitle.
+ */
 const CardDescription = React.forwardRef<
   HTMLParagraphElement,
   React.HTMLAttributes<HTMLParagraphElement>
@@ -103,6 +126,10 @@ const CardDescription = React.forwardRef<
 ))
 CardDescription.displayName = "CardDescription"
 
+/**
+ * Container for the main content of the card.
+ * Provides consistent padding and spacing.
+ */
 const CardContent = React.forwardRef<
   HTMLDivElement,
   React.HTMLAttributes<HTMLDivElement>
@@ -111,6 +138,10 @@ const CardContent = React.forwardRef<
 ))
 CardContent.displayName = "CardContent"
 
+/**
+ * Optional footer section for the card.
+ * Useful for action buttons or additional information.
+ */
 const CardFooter = React.forwardRef<
   HTMLDivElement,
   React.HTMLAttributes<HTMLDivElement>
